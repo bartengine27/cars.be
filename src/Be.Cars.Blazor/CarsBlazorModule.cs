@@ -182,6 +182,7 @@ public class CarsBlazorModule : AbpModule
                 options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
                 options.ResponseType = OpenIdConnectResponseType.CodeIdToken;
                 //TODO only for development mode
+                //https://stackoverflow.com/questions/53352945/aspnetcore-authentication-correlation-failed
                 options.BackchannelHttpHandler = new HttpClientHandler
                 {
                     ServerCertificateCustomValidationCallback = (sender, cert, chain, policyErrors) =>
@@ -192,6 +193,7 @@ public class CarsBlazorModule : AbpModule
 
                 options.ClientId = configuration["AuthServer:ClientId"];
                 options.ClientSecret = configuration["AuthServer:ClientSecret"];
+                //TODO only for development mode
                 options.CorrelationCookie.SameSite = SameSiteMode.None;
 
                 options.SaveTokens = true;
