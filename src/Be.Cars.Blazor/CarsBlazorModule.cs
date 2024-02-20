@@ -50,6 +50,7 @@ using Volo.Abp.UI;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
+using Microsoft.IdentityModel.Logging;
 
 namespace Be.Cars.Blazor;
 
@@ -279,6 +280,7 @@ public class CarsBlazorModule : AbpModule
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
+            IdentityModelEventSource.ShowPII = true;
         }
 
         app.UseAbpRequestLocalization();
