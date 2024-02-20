@@ -51,6 +51,7 @@ using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
 using Microsoft.IdentityModel.Logging;
+using System.Net;
 
 namespace Be.Cars.Blazor;
 
@@ -281,6 +282,8 @@ public class CarsBlazorModule : AbpModule
         {
             app.UseDeveloperExceptionPage();
             IdentityModelEventSource.ShowPII = true;
+            //trust all certificates
+            ServicePointManager.ServerCertificateValidationCallback += (o, c, ch, er) => true;
         }
 
         app.UseAbpRequestLocalization();
