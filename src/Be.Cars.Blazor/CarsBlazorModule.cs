@@ -194,7 +194,7 @@ public class CarsBlazorModule : AbpModule
                 options.ClientId = configuration["AuthServer:ClientId"];
                 options.ClientSecret = configuration["AuthServer:ClientSecret"];
                 //TODO only for development mode
-                options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+                //options.CorrelationCookie.SameSite = SameSiteMode.Lax;
 
                 options.SaveTokens = true;
                 options.GetClaimsFromUserInfoEndpoint = true;
