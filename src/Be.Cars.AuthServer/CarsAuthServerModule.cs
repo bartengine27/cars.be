@@ -122,6 +122,12 @@ public class CarsAuthServerModule : AbpModule
             options.KeyPrefix = "Cars:";
         });
 
+        //disable https requirement for development
+        Configure<OpenIddictServerAspNetCoreBuilder>(configure =>
+        {
+            configure.DisableTransportSecurityRequirement();
+        });
+
         var dataProtectionBuilder = context.Services.AddDataProtection().SetApplicationName("Cars");
         if (!hostingEnvironment.IsDevelopment())
         {
