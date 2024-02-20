@@ -53,6 +53,8 @@ using Volo.Abp.VirtualFileSystem;
 using Microsoft.IdentityModel.Logging;
 using System.Net;
 using System.Net.Http;
+using Autofac.Core;
+using Microsoft.AspNetCore.Http;
 
 namespace Be.Cars.Blazor;
 
@@ -159,6 +161,11 @@ public class CarsBlazorModule : AbpModule
 
     private void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
     {
+        //https://stackoverflow.com/questions/50262561/correlation-failed-in-net-core-asp-net-identity-openid-connect
+        context.Services.Configure<CookiePolicyOptions>(options =>
+        {
+            options.Secure = CookieSecurePolicy.Always;
+        });
         context.Services.AddAuthentication(options =>
             {
                 options.DefaultScheme = "Cookies";
@@ -304,6 +311,8 @@ public class CarsBlazorModule : AbpModule
 
         app.UseCorrelationId();
         app.UseStaticFiles();
+        //https://stackoverflow.com/questions/50262561/correlation-failed-in-net-core-asp-net-identity-openid-connect
+        app.UseCookiePolicy();
         app.UseRouting();
         app.UseAuthentication();
 
