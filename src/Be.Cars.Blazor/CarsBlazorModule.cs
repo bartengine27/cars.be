@@ -312,7 +312,7 @@ public class CarsBlazorModule : AbpModule
         app.UseCorrelationId();
         app.UseStaticFiles();
         //https://stackoverflow.com/questions/50262561/correlation-failed-in-net-core-asp-net-identity-openid-connect
-        app.UseCookiePolicy();
+        //app.UseCookiePolicy();
         app.UseRouting();
         app.UseAuthentication();
 
