@@ -34,6 +34,7 @@ using Volo.Abp.Modularity;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.UI;
 using Volo.Abp.VirtualFileSystem;
+using Volo.Abp.OpenIddict;
 
 namespace Be.Cars;
 
@@ -52,8 +53,24 @@ public class CarsAuthServerModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
     {
+    https://docs.abp.io/en/abp/latest/Deployment/Configuring-OpenIddict
         PreConfigure<OpenIddictBuilder>(builder =>
         {
+            var hostingEnvironment = context.Services.GetHostingEnvironment();
+
+            if (!hostingEnvironment.IsDevelopment())
+            {
+                PreConfigure<AbpOpenIddictAspNetCoreOptions>(options =>
+                {
+                    options.AddDevelopmentEncryptionAndSigningCertificate = false;
+                });
+
+                PreConfigure<OpenIddictServerBuilder>(serverBuilder =>
+                {
+                    serverBuilder.AddProductionEncryptionAndSigningCertificate("openiddict.pfx", "00000000-0000-0000-0000-000000000000");
+                });
+            }
+
             builder.AddValidation(options =>
             {
                 options.AddAudiences("Cars");
@@ -120,12 +137,6 @@ public class CarsAuthServerModule : AbpModule
         Configure<AbpDistributedCacheOptions>(options =>
         {
             options.KeyPrefix = "Cars:";
-        });
-
-        //disable https requirement for development
-        Configure<OpenIddictServerAspNetCoreBuilder>(configure =>
-        {
-            configure.DisableTransportSecurityRequirement();
         });
 
         var dataProtectionBuilder = context.Services.AddDataProtection().SetApplicationName("Cars");
