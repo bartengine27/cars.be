@@ -162,10 +162,10 @@ public class CarsBlazorModule : AbpModule
     private void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
     {
         //https://stackoverflow.com/questions/50262561/correlation-failed-in-net-core-asp-net-identity-openid-connect
-        context.Services.Configure<CookiePolicyOptions>(options =>
-        {
-            options.Secure = CookieSecurePolicy.None;
-        });
+        //context.Services.Configure<CookiePolicyOptions>(options =>
+        //{
+        //    options.Secure = CookieSecurePolicy.None;
+        //});
         context.Services.AddAuthentication(options =>
             {
                 options.DefaultScheme = "Cookies";
@@ -192,6 +192,7 @@ public class CarsBlazorModule : AbpModule
 
                 options.ClientId = configuration["AuthServer:ClientId"];
                 options.ClientSecret = configuration["AuthServer:ClientSecret"];
+                options.CorrelationCookie.SameSite = SameSiteMode.None;
 
                 options.SaveTokens = true;
                 options.GetClaimsFromUserInfoEndpoint = true;
