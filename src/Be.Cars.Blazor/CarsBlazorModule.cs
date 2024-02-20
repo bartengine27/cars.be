@@ -52,6 +52,7 @@ using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
 using Microsoft.IdentityModel.Logging;
 using System.Net;
+using System.Net.Http;
 
 namespace Be.Cars.Blazor;
 
@@ -173,6 +174,14 @@ public class CarsBlazorModule : AbpModule
                 options.Authority = configuration["AuthServer:Authority"];
                 options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
                 options.ResponseType = OpenIdConnectResponseType.CodeIdToken;
+                //TODO only for development mode
+                options.BackchannelHttpHandler = new HttpClientHandler
+                {
+                    ServerCertificateCustomValidationCallback = (sender, cert, chain, policyErrors) =>
+                    {
+                        return true;
+                    }
+                };
 
                 options.ClientId = configuration["AuthServer:ClientId"];
                 options.ClientSecret = configuration["AuthServer:ClientSecret"];
