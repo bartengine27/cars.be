@@ -28,6 +28,7 @@ using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.VirtualFileSystem;
+using System.Net;
 
 namespace Be.Cars;
 
@@ -133,6 +134,7 @@ public class CarsHttpApiHostModule : AbpModule
         {
             var redis = ConnectionMultiplexer.Connect(configuration["Redis:Configuration"]);
             dataProtectionBuilder.PersistKeysToStackExchangeRedis(redis, "Cars-Protection-Keys");
+            ServicePointManager.ServerCertificateValidationCallback += (o, c, ch, er) => true;
         }
     }
 
