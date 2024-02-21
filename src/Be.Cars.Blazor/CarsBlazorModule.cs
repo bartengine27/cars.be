@@ -55,6 +55,7 @@ using System.Net;
 using System.Net.Http;
 using Autofac.Core;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting.Internal;
 
 namespace Be.Cars.Blazor;
 
@@ -166,6 +167,7 @@ public class CarsBlazorModule : AbpModule
         //{
         //    options.Secure = CookieSecurePolicy.None;
         //});
+        
         context.Services.AddAuthentication(options =>
             {
                 options.DefaultScheme = "Cookies";
@@ -182,14 +184,17 @@ public class CarsBlazorModule : AbpModule
                 options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
                 options.ResponseType = OpenIdConnectResponseType.CodeIdToken;
                 //TODO only for development mode
-                //https://stackoverflow.com/questions/53352945/aspnetcore-authentication-correlation-failed
-                options.BackchannelHttpHandler = new HttpClientHandler
+                if (context.Services.GetHostingEnvironment().IsDevelopment())
                 {
-                    ServerCertificateCustomValidationCallback = (sender, cert, chain, policyErrors) =>
+                    //https://stackoverflow.com/questions/53352945/aspnetcore-authentication-correlation-failed
+                    options.BackchannelHttpHandler = new HttpClientHandler
                     {
-                        return true;
-                    }
-                };
+                        ServerCertificateCustomValidationCallback = (sender, cert, chain, policyErrors) =>
+                        {
+                            return true;
+                        }
+                    };
+                }
 
                 options.ClientId = configuration["AuthServer:ClientId"];
                 options.ClientSecret = configuration["AuthServer:ClientSecret"];
