@@ -183,7 +183,7 @@ public class CarsBlazorModule : AbpModule
                 options.Authority = configuration["AuthServer:Authority"];
                 options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
                 options.ResponseType = OpenIdConnectResponseType.CodeIdToken;
-                //TODO only for development mode
+                
                 if (context.Services.GetHostingEnvironment().IsDevelopment())
                 {
                     //https://stackoverflow.com/questions/53352945/aspnetcore-authentication-correlation-failed

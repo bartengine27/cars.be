@@ -9,6 +9,7 @@ using Volo.Abp.SettingManagement;
 using Volo.Abp.VirtualFileSystem;
 using Volo.Abp.Http.Client;
 using System.Net.Http;
+using Microsoft.Extensions.Hosting;
 
 namespace Be.Cars;
 
@@ -27,17 +28,20 @@ public class CarsHttpApiClientModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        context.Services.PreConfigure<AbpHttpClientBuilderOptions>(options =>
+        if (context.Services.GetHostingEnvironment().IsDevelopment())
         {
-            options.ProxyClientBuildActions.Add((s, b) =>
+            context.Services.PreConfigure<AbpHttpClientBuilderOptions>(options =>
             {
-                b.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+                options.ProxyClientBuildActions.Add((s, b) =>
                 {
-                    //ClientCertificateOptions = ClientCertificateOption.Manual,
-                    ServerCertificateCustomValidationCallback = (x, x1, x2, x3) => true,
+                    b.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+                    {
+                        //ClientCertificateOptions = ClientCertificateOption.Manual,
+                        ServerCertificateCustomValidationCallback = (x, x1, x2, x3) => true,
+                    });
                 });
             });
-        });
+        }
         //https://github.com/abpframework/abp/blob/dev/docs/en/API/Dynamic-CSharp-API-Clients.md
         context.Services.AddHttpClientProxies(
             typeof(CarsApplicationContractsModule).Assembly,

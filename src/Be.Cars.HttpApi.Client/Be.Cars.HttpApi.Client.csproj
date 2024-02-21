@@ -3,7 +3,7 @@
   <Import Project="..\..\common.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net7.0</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <RootNamespace>Be.Cars</RootNamespace>
   </PropertyGroup>
@@ -24,6 +24,12 @@
   <ItemGroup>
     <EmbeddedResource Include="**\*generate-proxy.json" />
     <Content Remove="**\*generate-proxy.json" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <PackageReference Include="Volo.Abp.AspNetCore">
+      <Version>8.0.3</Version>
+    </PackageReference>
   </ItemGroup>
 
 </Project>
