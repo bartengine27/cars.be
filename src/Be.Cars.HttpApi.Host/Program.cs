@@ -57,6 +57,7 @@ public class Program
                     builder.AddConsoleExporter();
                 });
             var app = builder.Build();
+            app.MapPrometheusScrapingEndpoint();
             await app.InitializeApplicationAsync();
             await app.RunAsync();
             return 0;
