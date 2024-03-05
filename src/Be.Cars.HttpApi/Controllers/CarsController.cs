@@ -1,5 +1,6 @@
 ﻿using Be.Cars.Localization;
 using Be.Cars.Metrics;
+using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using Volo.Abp.AspNetCore.Mvc;
 
@@ -15,6 +16,7 @@ public abstract class CarsController : AbpControllerBase
         CustomMetrics = customMetrics;
     }
 
+    [HttpPost("api/car/increment")]
     public Task PostIncrementCar()
     {
         CustomMetrics.IncrementCarsCounter();
