@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using Be.Cars.Metrics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -34,6 +35,7 @@ public class Program
                 .UseAutofac()
                 .UseSerilog();
             await builder.AddApplicationAsync<CarsHttpApiHostModule>();
+            builder.Services.AddSingleton<CustomMetrics>();
             //add telemetry
             //https://community.abp.io/posts/asp.net-core-metrics-with-.net-8.0-1xnw1apc
             //https://learn.microsoft.com/en-us/aspnet/core/log-mon/metrics/metrics?view=aspnetcore-8.0
