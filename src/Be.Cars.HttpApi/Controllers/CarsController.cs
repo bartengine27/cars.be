@@ -22,6 +22,7 @@ public abstract class CarsController : AbpControllerBase
     public Task PostIncrementCar()
     {
         CustomMetrics.IncrementCarsCounter();
+        Logger.LogInformation("Incremented cars counter");
         return Task.CompletedTask;
     }
 
