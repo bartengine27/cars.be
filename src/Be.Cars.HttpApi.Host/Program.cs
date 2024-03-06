@@ -34,6 +34,9 @@ public class Program
         {
             Log.Information("Starting Be.Cars.HttpApi.Host.");
             var builder = WebApplication.CreateBuilder(args);
+            builder.Logging.ClearProviders();
+            builder.Logging.SetMinimumLevel(LogLevel.Information);
+            builder.Logging.AddConsole();
             builder.Host.AddAppSettingsSecretsJson()
                 .UseAutofac()
                 .UseSerilog();
@@ -43,7 +46,7 @@ public class Program
             //https://community.abp.io/posts/asp.net-core-metrics-with-.net-8.0-1xnw1apc
             //https://learn.microsoft.com/en-us/aspnet/core/log-mon/metrics/metrics?view=aspnetcore-8.0
             //https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/src/OpenTelemetry.Exporter.Prometheus.AspNetCore/README.md
-            builder.Services.AddOpenTelemetry()
+            builder.Services.AddOpenTelemetry()                
                 .WithMetrics(builder =>
                 {
                     builder.AddAspNetCoreInstrumentation();
