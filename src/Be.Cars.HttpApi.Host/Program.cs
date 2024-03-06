@@ -17,52 +17,58 @@ public class Program
 {
     public async static Task<int> Main(string[] args)
     {
-//        Log.Logger = new LoggerConfiguration()
-//#if DEBUG
-//            .MinimumLevel.Debug()
-//#else
-//            .MinimumLevel.Information()
-//#endif
-//            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-//            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
-//            .Enrich.FromLogContext()
-//            .WriteTo.Async(c => c.File("Logs/logs.txt"))
-//            .WriteTo.Async(c => c.Console())
-//            .CreateLogger();
+        Log.Logger = new LoggerConfiguration()
+#if DEBUG
+            .MinimumLevel.Debug()
+#else
+            .MinimumLevel.Information()
+#endif
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+            .Enrich.FromLogContext()
+            .WriteTo.Async(c => c.File("Logs/logs.txt"))
+            .WriteTo.Async(c => c.Console())
+            .WriteTo.OpenTelemetry(otlpOptions =>
+            {
+
+                otlpOptions.Endpoint = "http://localhost:4318";
+                otlpOptions.Protocol = Serilog.Sinks.OpenTelemetry.OtlpProtocol.HttpProtobuf;
+            })
+            .CreateLogger();
 
         try
         {
             Log.Information("Starting Be.Cars.HttpApi.Host.");
             var builder = WebApplication.CreateBuilder(args);
-            builder.Logging.ClearProviders();
-            builder.Logging.SetMinimumLevel(LogLevel.Information);            
-            builder.Logging.AddConsole();
-            builder.Logging.AddOpenTelemetry(options =>
-            {
-                var resourceBuilder = ResourceBuilder.CreateDefault().AddService(builder.Environment.ApplicationName);
-                
-                options.IncludeScopes = true;
-                options.ParseStateValues = true;
-                options.IncludeFormattedMessage = true;
-                //TODO https://opentelemetry.io/docs/collector/
-                options.SetResourceBuilder(resourceBuilder).AddOtlpExporter(otlpOptions =>
-                {
-                    otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
-                    otlpOptions.Endpoint = new Uri("http://localhost:4318");
-                });
-                options.AddConsoleExporter();
-            }
-            );
+            //builder.Logging.ClearProviders();
+            //builder.Logging.SetMinimumLevel(LogLevel.Information);            
+            //builder.Logging.AddConsole();
+            //builder.Logging.AddOpenTelemetry(options =>
+            //{
+            //    var resourceBuilder = ResourceBuilder.CreateDefault().AddService(builder.Environment.ApplicationName);
+
+            //    options.IncludeScopes = true;
+            //    options.ParseStateValues = true;
+            //    options.IncludeFormattedMessage = true;
+            //    //TODO https://opentelemetry.io/docs/collector/
+            //    options.SetResourceBuilder(resourceBuilder).AddOtlpExporter(otlpOptions =>
+            //    {
+            //        otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+            //        otlpOptions.Endpoint = new Uri("http://localhost:4318");
+            //    });
+            //    options.AddConsoleExporter();
+            //}
+            //);
             builder.Host.AddAppSettingsSecretsJson()
-                .UseAutofac();
-                //.UseSerilog();
+                .UseAutofac()
+                .UseSerilog();
             await builder.AddApplicationAsync<CarsHttpApiHostModule>();
             builder.Services.AddSingleton<CustomMetrics>();
             //add telemetry
             //https://community.abp.io/posts/asp.net-core-metrics-with-.net-8.0-1xnw1apc
             //https://learn.microsoft.com/en-us/aspnet/core/log-mon/metrics/metrics?view=aspnetcore-8.0
             //https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/src/OpenTelemetry.Exporter.Prometheus.AspNetCore/README.md
-            builder.Services.AddOpenTelemetry()                
+            builder.Services.AddOpenTelemetry()
                 .WithMetrics(builder =>
                 {
                     builder.AddAspNetCoreInstrumentation();
