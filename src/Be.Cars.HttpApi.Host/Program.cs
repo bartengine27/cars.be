@@ -48,6 +48,7 @@ public class Program
                     builder.AddMeter("Microsoft.AspNetCore.Hosting");
                     //.net8 only https://github.com/open-telemetry/opentelemetry-dotnet/pull/4934
                     builder.AddMeter("Microsoft.AspNetCore.Server.Kestrel");
+                    builder.AddMeter("Be.Cars.Metrics.CustomMetrics");
                     builder.AddView("http.server.request.duration",
                         new ExplicitBucketHistogramConfiguration
                         {
