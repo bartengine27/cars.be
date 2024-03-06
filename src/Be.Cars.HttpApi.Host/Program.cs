@@ -4,6 +4,8 @@ using Be.Cars.Metrics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using Serilog;
 using Serilog.Events;
@@ -48,7 +50,7 @@ public class Program
                     builder.AddMeter("Microsoft.AspNetCore.Hosting");
                     //.net8 only https://github.com/open-telemetry/opentelemetry-dotnet/pull/4934
                     builder.AddMeter("Microsoft.AspNetCore.Server.Kestrel");
-                    builder.AddMeter("Be.Cars.Metrics.CustomMetrics");
+                    builder.AddMeter(CustomMetrics.Name);
                     builder.AddView("http.server.request.duration",
                         new ExplicitBucketHistogramConfiguration
                         {
@@ -59,6 +61,14 @@ public class Program
                     builder.AddPrometheusExporter();
                     builder.AddConsoleExporter();
                 });
+            builder.Logging.AddOpenTelemetry(options =>
+            {
+                options.AddOtlpExporter(otlpOptions =>
+                {
+                    otlpOptions.Endpoint = new Uri("http://localhost:4317");
+                });
+            }
+                );
             var app = builder.Build();
             app.MapPrometheusScrapingEndpoint();
             await app.InitializeApplicationAsync();
