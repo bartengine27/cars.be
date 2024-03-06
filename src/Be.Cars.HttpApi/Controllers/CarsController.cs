@@ -11,7 +11,7 @@ namespace Be.Cars.Controllers;
  */
 public abstract class CarsController : AbpControllerBase
 {
-    protected CarsController(CustomMetrics customMetrics, ILogger logger)
+    protected CarsController(CustomMetrics customMetrics, ILogger<CarsController> logger)
     {
         LocalizationResource = typeof(CarsResource);
         CustomMetrics = customMetrics;
@@ -26,7 +26,7 @@ public abstract class CarsController : AbpControllerBase
         return Task.CompletedTask;
     }
 
-    public ILogger Logger
+    public ILogger<CarsController> Logger
     {
 
         get;

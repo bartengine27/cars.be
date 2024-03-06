@@ -11,7 +11,7 @@ namespace Be.Cars.Controllers
 {
     public class CustomController : CarsController
     {
-        public CustomController(CustomMetrics customMetrics, ILogger logger) : base(customMetrics, logger)
+        public CustomController(CustomMetrics customMetrics, ILogger<CustomController> logger) : base(customMetrics, logger)
         {
   
         }
