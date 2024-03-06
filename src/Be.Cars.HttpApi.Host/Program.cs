@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
 using Serilog;
 using Serilog.Events;
 
@@ -65,11 +66,13 @@ public class Program
                 });
             builder.Logging.AddOpenTelemetry(options =>
             {
+                var resourceBuilder = ResourceBuilder.CreateDefault().AddService(builder.Environment.ApplicationName);
+
                 options.IncludeScopes = true;
                 options.ParseStateValues = true;
                 options.IncludeFormattedMessage = true;
                 //TODO https://opentelemetry.io/docs/collector/
-                options.AddOtlpExporter(otlpOptions =>
+                options.SetResourceBuilder(resourceBuilder).AddOtlpExporter(otlpOptions =>
                 {
                     otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
                     otlpOptions.Endpoint = new Uri("http://localhost:4318");
