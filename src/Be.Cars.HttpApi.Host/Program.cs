@@ -36,7 +36,7 @@ public class Program
             var builder = WebApplication.CreateBuilder(args);
             builder.Logging.ClearProviders();
             builder.Logging.SetMinimumLevel(LogLevel.Information);
-            //builder.Logging.AddConsole();
+            builder.Logging.AddConsole();
             builder.Logging.AddOpenTelemetry(options =>
             {
                 var resourceBuilder = ResourceBuilder.CreateDefault().AddService(builder.Environment.ApplicationName);
@@ -51,10 +51,10 @@ public class Program
                     otlpOptions.Endpoint = new Uri("http://localhost:4318");
                 });
             }
-            );            
+            );
             builder.Host.AddAppSettingsSecretsJson()
-                .UseAutofac()
-                .UseSerilog();
+                .UseAutofac();
+                //.UseSerilog();
             await builder.AddApplicationAsync<CarsHttpApiHostModule>();
             builder.Services.AddSingleton<CustomMetrics>();
             //add telemetry
