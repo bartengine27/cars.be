@@ -58,6 +58,8 @@ public class Program
                     0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10 }
                         });
                     //builder.AddAspNetCoreInstrumentation();
+                    //TODO https://opentelemetry.io/docs/collector/
+                    //builder.AddOtlpExporter();
                     builder.AddPrometheusExporter();
                     builder.AddConsoleExporter();
                 });
@@ -66,9 +68,11 @@ public class Program
                 options.IncludeScopes = true;
                 options.ParseStateValues = true;
                 options.IncludeFormattedMessage = true;
+                //TODO https://opentelemetry.io/docs/collector/
                 options.AddOtlpExporter(otlpOptions =>
                 {
-                    otlpOptions.Endpoint = new Uri("http://localhost:4317");
+                    otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+                    otlpOptions.Endpoint = new Uri("http://localhost:4318");
                 });
             }
                 );
