@@ -17,18 +17,18 @@ public class Program
 {
     public async static Task<int> Main(string[] args)
     {
-        Log.Logger = new LoggerConfiguration()
-#if DEBUG
-            .MinimumLevel.Debug()
-#else
-            .MinimumLevel.Information()
-#endif
-            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
-            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
-            .Enrich.FromLogContext()
-            .WriteTo.Async(c => c.File("Logs/logs.txt"))
-            .WriteTo.Async(c => c.Console())
-            .CreateLogger();
+//        Log.Logger = new LoggerConfiguration()
+//#if DEBUG
+//            .MinimumLevel.Debug()
+//#else
+//            .MinimumLevel.Information()
+//#endif
+//            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+//            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+//            .Enrich.FromLogContext()
+//            .WriteTo.Async(c => c.File("Logs/logs.txt"))
+//            .WriteTo.Async(c => c.Console())
+//            .CreateLogger();
 
         try
         {
@@ -36,7 +36,22 @@ public class Program
             var builder = WebApplication.CreateBuilder(args);
             builder.Logging.ClearProviders();
             builder.Logging.SetMinimumLevel(LogLevel.Information);
-            builder.Logging.AddConsole();
+            //builder.Logging.AddConsole();
+            builder.Logging.AddOpenTelemetry(options =>
+            {
+                var resourceBuilder = ResourceBuilder.CreateDefault().AddService(builder.Environment.ApplicationName);
+
+                options.IncludeScopes = true;
+                options.ParseStateValues = true;
+                options.IncludeFormattedMessage = true;
+                //TODO https://opentelemetry.io/docs/collector/
+                options.SetResourceBuilder(resourceBuilder).AddOtlpExporter(otlpOptions =>
+                {
+                    otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
+                    otlpOptions.Endpoint = new Uri("http://localhost:4318");
+                });
+            }
+            );            
             builder.Host.AddAppSettingsSecretsJson()
                 .UseAutofac()
                 .UseSerilog();
@@ -67,21 +82,7 @@ public class Program
                     builder.AddPrometheusExporter();
                     builder.AddConsoleExporter();
                 });
-            builder.Logging.AddOpenTelemetry(options =>
-            {
-                var resourceBuilder = ResourceBuilder.CreateDefault().AddService(builder.Environment.ApplicationName);
 
-                options.IncludeScopes = true;
-                options.ParseStateValues = true;
-                options.IncludeFormattedMessage = true;
-                //TODO https://opentelemetry.io/docs/collector/
-                options.SetResourceBuilder(resourceBuilder).AddOtlpExporter(otlpOptions =>
-                {
-                    otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
-                    otlpOptions.Endpoint = new Uri("http://localhost:4318");
-                });
-            }
-                );
             var app = builder.Build();
             app.MapPrometheusScrapingEndpoint();
             await app.InitializeApplicationAsync();
