@@ -31,7 +31,7 @@ public class Program
             .WriteTo.OpenTelemetry(otlpOptions =>
             {
 
-                otlpOptions.Endpoint = "http://localhost:4318";
+                otlpOptions.Endpoint = "http://192.168.1.64:4318";
                 otlpOptions.Protocol = Serilog.Sinks.OpenTelemetry.OtlpProtocol.HttpProtobuf;
             })
             .CreateLogger();
