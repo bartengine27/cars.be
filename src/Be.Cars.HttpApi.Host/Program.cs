@@ -63,6 +63,9 @@ public class Program
                 });
             builder.Logging.AddOpenTelemetry(options =>
             {
+                options.IncludeScopes = true;
+                options.ParseStateValues = true;
+                options.IncludeFormattedMessage = true;
                 options.AddOtlpExporter(otlpOptions =>
                 {
                     otlpOptions.Endpoint = new Uri("http://localhost:4317");

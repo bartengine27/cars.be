@@ -11,7 +11,7 @@ namespace Be.Cars.Metrics
 
         public CustomMetrics(IMeterFactory meterFactory)
         {
-            meter = meterFactory.Create("Be.Cars.Metrics.CustomMetrics");
+            meter = meterFactory.Create(Name);
             _carsCounter = meter.CreateCounter<long>("number_of_cars");
         }
 
@@ -22,5 +22,7 @@ namespace Be.Cars.Metrics
 
         private Meter meter;
         private readonly Counter<long> _carsCounter;
+
+        public static string Name => "Be.Cars.Metrics.CustomMetrics";
     }
 }
