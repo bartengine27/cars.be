@@ -35,12 +35,12 @@ public class Program
             Log.Information("Starting Be.Cars.HttpApi.Host.");
             var builder = WebApplication.CreateBuilder(args);
             builder.Logging.ClearProviders();
-            builder.Logging.SetMinimumLevel(LogLevel.Information);
+            builder.Logging.SetMinimumLevel(LogLevel.Information);            
             builder.Logging.AddConsole();
             builder.Logging.AddOpenTelemetry(options =>
             {
                 var resourceBuilder = ResourceBuilder.CreateDefault().AddService(builder.Environment.ApplicationName);
-
+                
                 options.IncludeScopes = true;
                 options.ParseStateValues = true;
                 options.IncludeFormattedMessage = true;
@@ -50,6 +50,7 @@ public class Program
                     otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
                     otlpOptions.Endpoint = new Uri("http://localhost:4318");
                 });
+                options.AddConsoleExporter();
             }
             );
             builder.Host.AddAppSettingsSecretsJson()
