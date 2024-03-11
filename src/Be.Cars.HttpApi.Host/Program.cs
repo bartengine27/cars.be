@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using OpenTelemetry.Exporter;
 using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
@@ -27,49 +28,31 @@ public class Program
             .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
             .Enrich.FromLogContext()
             .WriteTo.Async(c => c.File("Logs/logs.txt"))
-            .WriteTo.Async(c => c.Console())
+            .WriteTo.Async(c => c.Console())            
             .WriteTo.OpenTelemetry(otlpOptions =>
-            {
-
-                otlpOptions.Endpoint = "http://192.168.1.64:4318";
-                otlpOptions.Protocol = Serilog.Sinks.OpenTelemetry.OtlpProtocol.HttpProtobuf;
-            })
+                {
+                    otlpOptions.Endpoint = "http://127.0.0.1:4317/";
+                    otlpOptions.Protocol = Serilog.Sinks.OpenTelemetry.OtlpProtocol.Grpc;
+                }
+            )
             .CreateLogger();
 
         try
         {
             Log.Information("Starting Be.Cars.HttpApi.Host.");
             var builder = WebApplication.CreateBuilder(args);
-            //builder.Logging.ClearProviders();
-            //builder.Logging.SetMinimumLevel(LogLevel.Information);            
-            //builder.Logging.AddConsole();
-            //builder.Logging.AddOpenTelemetry(options =>
-            //{
-            //    var resourceBuilder = ResourceBuilder.CreateDefault().AddService(builder.Environment.ApplicationName);
-
-            //    options.IncludeScopes = true;
-            //    options.ParseStateValues = true;
-            //    options.IncludeFormattedMessage = true;
-            //    //TODO https://opentelemetry.io/docs/collector/
-            //    options.SetResourceBuilder(resourceBuilder).AddOtlpExporter(otlpOptions =>
-            //    {
-            //        otlpOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.HttpProtobuf;
-            //        otlpOptions.Endpoint = new Uri("http://localhost:4318");
-            //    });
-            //    options.AddConsoleExporter();
-            //}
-            //);
             builder.Host.AddAppSettingsSecretsJson()
-                .UseAutofac()
-                .UseSerilog();
+            .UseAutofac()
+            .UseSerilog();
             await builder.AddApplicationAsync<CarsHttpApiHostModule>();
-            builder.Services.AddSingleton<CustomMetrics>();
+
             //add telemetry
             //https://community.abp.io/posts/asp.net-core-metrics-with-.net-8.0-1xnw1apc
             //https://learn.microsoft.com/en-us/aspnet/core/log-mon/metrics/metrics?view=aspnetcore-8.0
             //https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/src/OpenTelemetry.Exporter.Prometheus.AspNetCore/README.md
+            builder.Services.AddSingleton<CustomMetrics>();            
             builder.Services.AddOpenTelemetry()
-                .WithMetrics(builder =>
+            .WithMetrics(builder =>
                 {
                     builder.AddAspNetCoreInstrumentation();
                     //.net8 only https://github.com/open-telemetry/opentelemetry-dotnet/pull/4934
@@ -88,7 +71,8 @@ public class Program
                     //builder.AddOtlpExporter();
                     builder.AddPrometheusExporter();
                     builder.AddConsoleExporter();
-                });
+                }
+            );
 
             var app = builder.Build();
             app.MapPrometheusScrapingEndpoint();
@@ -98,12 +82,11 @@ public class Program
         }
         catch (Exception ex)
         {
+            Log.Fatal(ex, "Host terminated unexpectedly!");
             if (ex is HostAbortedException)
             {
                 throw;
             }
-
-            Log.Fatal(ex, "Host terminated unexpectedly!");
             return 1;
         }
         finally
