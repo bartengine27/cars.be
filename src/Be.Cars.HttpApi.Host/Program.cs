@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using Be.Cars.Metrics;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -41,10 +42,20 @@ public class Program
         {
             Log.Information("Starting Be.Cars.HttpApi.Host.");
             var builder = WebApplication.CreateBuilder(args);
+
+            //add forward headers middleware, see https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/proxy-load-balancer?view=aspnetcore-8.0
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            });
+
+
             builder.Host.AddAppSettingsSecretsJson()
             .UseAutofac()
             .UseSerilog();
             await builder.AddApplicationAsync<CarsHttpApiHostModule>();
+            
 
             //add telemetry
             //https://community.abp.io/posts/asp.net-core-metrics-with-.net-8.0-1xnw1apc
@@ -75,6 +86,7 @@ public class Program
             );
 
             var app = builder.Build();
+            app.UseForwardedHeaders();
             app.MapPrometheusScrapingEndpoint();
             await app.InitializeApplicationAsync();
             await app.RunAsync();
