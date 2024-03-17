@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Be.Cars.Metrics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -19,6 +20,8 @@ public class Program
 {
     public async static Task<int> Main(string[] args)
     {
+        var builder = WebApplication.CreateBuilder(args);
+        string otlpEndpoint = builder.Configuration.GetValue("Otlp:Endpoint", defaultValue: "http://localhost:4317");
         Log.Logger = new LoggerConfiguration()
 #if DEBUG
             .MinimumLevel.Debug()
@@ -32,7 +35,8 @@ public class Program
             .WriteTo.Async(c => c.Console())            
             .WriteTo.OpenTelemetry(otlpOptions =>
                 {
-                    otlpOptions.Endpoint = "http://127.0.0.1:4317/";
+                    //otlpOptions.Endpoint = "http://127.0.0.1:4317/";
+                    otlpOptions.Endpoint = otlpEndpoint;
                     otlpOptions.Protocol = Serilog.Sinks.OpenTelemetry.OtlpProtocol.Grpc;
                 }
             )
@@ -41,7 +45,7 @@ public class Program
         try
         {
             Log.Information("Starting Be.Cars.HttpApi.Host.");
-            var builder = WebApplication.CreateBuilder(args);
+//            var builder = WebApplication.CreateBuilder(args);
 
             //add forward headers middleware, see https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/proxy-load-balancer?view=aspnetcore-8.0
             builder.Services.Configure<ForwardedHeadersOptions>(options =>
