@@ -99,6 +99,7 @@ public class Program
         catch (Exception ex)
         {
             Log.Fatal(ex, "Host terminated unexpectedly!");
+            Log.Debug($"otlp endpoint: [{otlpEndpoint}]");
             if (ex is HostAbortedException)
             {
                 throw;
