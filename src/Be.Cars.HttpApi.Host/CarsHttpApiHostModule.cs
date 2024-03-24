@@ -31,6 +31,8 @@ using Volo.Abp.VirtualFileSystem;
 using System.Net;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Net.Http;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 namespace Be.Cars;
 
@@ -102,23 +104,36 @@ public class CarsHttpApiHostModule : AbpModule
     private void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
     {
         context.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
+            .AddAbpOpenIdConnect("oidc", options =>
             {
                 options.Authority = configuration["AuthServer:Authority"];
                 options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
-                options.Audience = "Cars";
-                options.TokenValidationParameters = new TokenValidationParameters
+                options.ResponseType = OpenIdConnectResponseType.CodeIdToken;
+
+                if (context.Services.GetHostingEnvironment().IsDevelopment())
                 {
-                    ValidateIssuer = false,
-                    ValidIssuer = "YourIssuer", // The issuer you expect
-                    ValidateAudience = false,
-                    ValidAudience = "YourAudience", // The audience you expect
-                    ValidateLifetime = true,
-                    //IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourSecretKey")),
-                    //IssuerSigningKey = new RsaSecurityKey(X509SecurityKey),
-                    ValidateIssuerSigningKey = false,
-                    
-                };
+                    //https://stackoverflow.com/questions/53352945/aspnetcore-authentication-correlation-failed
+                    options.BackchannelHttpHandler = new HttpClientHandler
+                    {
+                        ServerCertificateCustomValidationCallback = (sender, cert, chain, policyErrors) =>
+                        {
+                            return true;
+                        }
+                    };
+                }
+
+                options.ClientId = configuration["AuthServer:ClientId"];
+                options.ClientSecret = configuration["AuthServer:ClientSecret"];
+                //TODO only for development mode
+                //options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+
+                options.SaveTokens = true;
+                options.GetClaimsFromUserInfoEndpoint = true;
+
+                options.Scope.Add("roles");
+                options.Scope.Add("email");
+                options.Scope.Add("phone");
+                options.Scope.Add("Cars");
             });
     }
 
