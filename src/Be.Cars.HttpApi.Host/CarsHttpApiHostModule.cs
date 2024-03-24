@@ -29,6 +29,8 @@ using Volo.Abp.Modularity;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.VirtualFileSystem;
 using System.Net;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace Be.Cars;
 
@@ -105,6 +107,16 @@ public class CarsHttpApiHostModule : AbpModule
                 options.Authority = configuration["AuthServer:Authority"];
                 options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
                 options.Audience = "Cars";
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = false,
+                    ValidIssuer = "YourIssuer", // The issuer you expect
+                    ValidateAudience = false,
+                    ValidAudience = "YourAudience", // The audience you expect
+                    ValidateLifetime = true,
+                    //IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourSecretKey")),
+                    ValidateIssuerSigningKey = true,
+                };
             });
     }
 
