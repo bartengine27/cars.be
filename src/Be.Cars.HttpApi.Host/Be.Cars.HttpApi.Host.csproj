@@ -29,6 +29,7 @@
     <PackageReference Include="DistributedLock.Redis" Version="1.0.2" />
     <PackageReference Include="Serilog.Sinks.OpenTelemetry" Version="1.2.0" />
     <PackageReference Include="SharpAbp.Abp.OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="3.1.7" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Authentication.OpenIdConnect" Version="8.0.3" />
     <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy" Version="8.0.3" />
     <PackageReference Include="Volo.Abp.Autofac" Version="8.0.3" />
     <PackageReference Include="Volo.Abp.Caching.StackExchangeRedis" Version="8.0.3" />
