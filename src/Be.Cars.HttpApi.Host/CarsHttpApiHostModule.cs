@@ -33,6 +33,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Net.Http;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Serilog.Core;
 
 namespace Be.Cars;
 
@@ -140,46 +141,47 @@ public class CarsHttpApiHostModule : AbpModule
     private static void ConfigureSwaggerServices(ServiceConfigurationContext context, IConfiguration configuration)
     {
         context.Services.AddAbpSwaggerGenWithOidc(
-            "https://192.168.1.63:5000"
+            configuration["AuthServer:Authority"],
+            scopes: new[] { "Cars" },
+            // "authorization_code"
+            flows: new[] { AbpSwaggerOidcFlows.AuthorizationCode },
+            // When deployed on K8s, should be metadata URL of the reachable DNS over internet like https://myauthserver.company.com
+            discoveryEndpoint: configuration["AuthServer:Authority"],
+            options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo { Title = "Cars API", Version = "v1" });
+                options.DocInclusionPredicate((docName, description) => true);
+                options.CustomSchemaIds(type => type.FullName);
+            }
         );
-
-        //context.Services.AddAbpSwaggerGenWithOidc(
-        //configuration["AuthServer:Authority"],
-        //scopes: new[] { "Cars" },
-        //// "authorization_code"
-        //flows: new[] { AbpSwaggerOidcFlows.AuthorizationCode },
-        //// When deployed on K8s, should be metadata URL of the reachable DNS over internet like https://myauthserver.company.com
-        //discoveryEndpoint: configuration["AuthServer:Authority"],
-        //options =>
-        //{
-        //    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Cars API", Version = "v1" });
-        //    options.DocInclusionPredicate((docName, description) => true);
-        //    options.CustomSchemaIds(type => type.FullName);
-        //});
-
-
-        //context.Services.AddAbpSwaggerGenWithOAuth(
-        //    configuration["AuthServer:Authority"],
-        //    new Dictionary<string, string>
-        //    {
-        //            {"Cars", "Cars API"}
-        //    },
-        //    options =>
-        //    {
-        //        options.SwaggerDoc("v1", new OpenApiInfo { Title = "Cars API", Version = "v1" });
-        //        options.DocInclusionPredicate((docName, description) => true);
-        //        options.CustomSchemaIds(type => type.FullName);
-        //    }
-        //    );
     }
 
+    /// <summary>
+    /// <para>
+    /// Antiforgery tokens are used to prevent Cross-Site Request Forgery (CSRF) attacks and are particularly relevant in applications 
+    /// where form data is submitted. These tokens rely on the application's data protection APIs to encrypt and decrypt the tokens. 
+    /// When running in a distributed environment, such as behind a load balancer with multiple application instances, all instances must 
+    /// share the same data protection keys to successfully encrypt and decrypt tokens.
+    /// </para>
+    /// <para>
+    /// As we are using Redis as a distributed cache, we can use it to store the data protection keys, also in Development as NGINX is used as 
+    /// a load balancer in Development (at least in the Proxmox setup).
+    /// </para>
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="configuration"></param>
+    /// <param name="hostingEnvironment"></param>
+    /// <remarks>
+    /// If you see an "The antiforgery token could not be decrypted." error, check Redis and usage of NGINX for load balancing.
+    /// </remarks>
     private void ConfigureDataProtection(
         ServiceConfigurationContext context,
         IConfiguration configuration,
         IWebHostEnvironment hostingEnvironment)
     {
         var dataProtectionBuilder = context.Services.AddDataProtection().SetApplicationName("Cars");
-        if (!hostingEnvironment.IsDevelopment())
+        
+        //if (!hostingEnvironment.IsDevelopment())
         {
             var redis = ConnectionMultiplexer.Connect(configuration["Redis:Configuration"]);
             dataProtectionBuilder.PersistKeysToStackExchangeRedis(redis, "Cars-Protection-Keys");
