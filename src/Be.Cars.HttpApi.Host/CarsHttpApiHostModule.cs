@@ -114,8 +114,9 @@ public class CarsHttpApiHostModule : AbpModule
                     ValidateAudience = false,
                     ValidAudience = "YourAudience", // The audience you expect
                     ValidateLifetime = true,
-                    //IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourSecretKey")),
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("YourSecretKey")),
                     ValidateIssuerSigningKey = true,
+                    
                 };
             });
     }
