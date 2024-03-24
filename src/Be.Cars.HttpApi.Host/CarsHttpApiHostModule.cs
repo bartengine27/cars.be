@@ -139,18 +139,34 @@ public class CarsHttpApiHostModule : AbpModule
 
     private static void ConfigureSwaggerServices(ServiceConfigurationContext context, IConfiguration configuration)
     {
-        context.Services.AddAbpSwaggerGenWithOAuth(
-            configuration["AuthServer:Authority"],
-            new Dictionary<string, string>
-            {
-                    {"Cars", "Cars API"}
-            },
-            options =>
-            {
-                options.SwaggerDoc("v1", new OpenApiInfo { Title = "Cars API", Version = "v1" });
-                options.DocInclusionPredicate((docName, description) => true);
-                options.CustomSchemaIds(type => type.FullName);
-            });
+        context.Services.AddAbpSwaggerGenWithOidc(
+        configuration["AuthServer:Authority"],
+        scopes: new[] { "Cars" },
+        // "authorization_code"
+        flows: new[] { AbpSwaggerOidcFlows.AuthorizationCode },
+        // When deployed on K8s, should be metadata URL of the reachable DNS over internet like https://myauthserver.company.com
+        discoveryEndpoint: configuration["AuthServer:Authority"],
+        options =>
+        {
+            options.SwaggerDoc("v1", new OpenApiInfo { Title = "Cars API", Version = "v1" });
+            options.DocInclusionPredicate((docName, description) => true);
+            options.CustomSchemaIds(type => type.FullName);
+        });
+
+
+        //context.Services.AddAbpSwaggerGenWithOAuth(
+        //    configuration["AuthServer:Authority"],
+        //    new Dictionary<string, string>
+        //    {
+        //            {"Cars", "Cars API"}
+        //    },
+        //    options =>
+        //    {
+        //        options.SwaggerDoc("v1", new OpenApiInfo { Title = "Cars API", Version = "v1" });
+        //        options.DocInclusionPredicate((docName, description) => true);
+        //        options.CustomSchemaIds(type => type.FullName);
+        //    }
+        //    );
     }
 
     private void ConfigureDataProtection(
