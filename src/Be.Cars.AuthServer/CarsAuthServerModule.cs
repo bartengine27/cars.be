@@ -70,9 +70,14 @@ public class CarsAuthServerModule : AbpModule
                     serverBuilder.AddProductionEncryptionAndSigningCertificate("openiddict.pfx", "00000000-0000-0000-0000-000000000000");
                 });
             }
+            builder.AddServer(options =>
+            {
+                options.AllowClientCredentialsFlow();
+            }
+            );
 
             builder.AddValidation(options =>
-            {
+            {                                
                 options.AddAudiences("Cars");
                 options.UseLocalServer();
                 options.UseAspNetCore();

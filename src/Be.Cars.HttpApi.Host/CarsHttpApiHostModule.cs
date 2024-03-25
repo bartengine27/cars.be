@@ -34,6 +34,8 @@ using System.Text;
 using System.Net.Http;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 using Serilog.Core;
+using Microsoft.AspNetCore.Hosting.Server;
+using static Volo.Abp.Identity.Settings.IdentitySettingNames;
 
 namespace Be.Cars;
 
@@ -138,13 +140,30 @@ public class CarsHttpApiHostModule : AbpModule
             });
     }
 
+    /// <summary>
+    /// Configure the Swagger service with OIDC authentication:
+    /// <para>
+    /// <list type="bullet">
+    /// <item>AbpSwaggerOidcFlows.AuthorizationCode: The "authorization_code" flow is the default and suggested flow.Doesn't require a client secret when even there is a field for it.</item>
+    /// <item>AbpSwaggerOidcFlows.Implicit: The deprecated "implicit" flow that was used for javascript applications.</item>
+    /// <item>AbpSwaggerOidcFlows.Password: The legacy password flow which is also known as Resource Ownder Password flow. You need to provide a user name, password and client secret for it.</item>
+    /// <item>AbpSwaggerOidcFlows.ClientCredentials: The "client_credentials" flow that is used for server to server interactions.</item>
+    /// </list>
+    /// <see cref="AbpSwaggerOidcFlows.AuthorizationCode"/> and <see cref="AbpSwaggerOidcFlows.ClientCredentials"/> are used in this case.
+    /// </para>
+    /// <para>
+    /// Only one scope is enabled: Cars
+    /// </para>
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="configuration"></param>
     private static void ConfigureSwaggerServices(ServiceConfigurationContext context, IConfiguration configuration)
     {
         context.Services.AddAbpSwaggerGenWithOidc(
             configuration["AuthServer:Authority"],
             scopes: new[] { "Cars" },
             // "authorization_code"
-            flows: new[] { AbpSwaggerOidcFlows.AuthorizationCode },
+            flows: new[] { AbpSwaggerOidcFlows.AuthorizationCode, AbpSwaggerOidcFlows.ClientCredentials},
             // When deployed on K8s, should be metadata URL of the reachable DNS over internet like https://myauthserver.company.com
             discoveryEndpoint: configuration["AuthServer:Authority"],
             options =>
