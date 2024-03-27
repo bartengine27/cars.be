@@ -1,6 +1,9 @@
-﻿namespace Be.Cars;
+﻿using Volo.Abp.Modularity;
 
-public abstract class CarsApplicationTestBase : CarsTestBase<CarsApplicationTestModule>
+namespace Be.Cars;
+
+public abstract class CarsApplicationTestBase<TStartupModule> : CarsTestBase<TStartupModule>
+    where TStartupModule : IAbpModule
 {
 
 }

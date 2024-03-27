@@ -1,8 +1,9 @@
 {
-  "version": "1.0.0",
+  "version": "0.1.0",
   "name": "my-app-authserver",
   "private": true,
   "dependencies": {
-    "@abp/aspnetcore.mvc.ui.theme.leptonxlite": "~2.3.2"
+    "@volo/abp.aspnetcore.mvc.ui.theme.leptonx": "~3.0.4",
+    "@volo/account": "~8.0.5"
   }
 }

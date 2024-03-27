@@ -1,0 +1,140 @@
+version: '3.8'
+
+services:
+  cars-blazor:
+    image: be/cars-blazor:latest
+    container_name: cars-blazor
+    build:
+      context: ../../
+      dockerfile: src/Be.Cars.Blazor/Dockerfile.local
+    environment:
+      - ASPNETCORE_URLS=https://+:443;http://+:80;
+      - Kestrel__Certificates__Default__Path=/root/certificate/localhost.pfx
+      - Kestrel__Certificates__Default__Password=c32531bd-9000-4628-87b9-896e7af5c5e2
+      - App__SelfUrl=https://localhost:44314
+      - AuthServer__RequireHttpsMetadata=false      
+      - AuthServer__Authority=https://localhost:44334/
+      - AuthServer__IsContainerizedOnLocalhost=true
+      - AuthServer__MetaAddress=http://cars-authserver
+      - RemoteServices__AbpAccountPublic__BaseUrl=http://cars-authserver 
+      - RemoteServices__Default__BaseUrl=http://cars-api
+      - Redis__Configuration=redis
+    ports:
+      - "44314:443"
+    depends_on:    
+      - cars-api
+    restart: on-failure
+    volumes:
+      - ./certs:/root/certificate
+    networks:
+      - abp-network
+  cars-api:
+    image: be/cars-api:latest
+    container_name: cars-api
+    hostname: cars-api
+    build:
+      context: ../../
+      dockerfile: src/Be.Cars.HttpApi.Host/Dockerfile.local
+    environment:
+      - ASPNETCORE_URLS=https://+:443;http://+:80;
+      - Kestrel__Certificates__Default__Path=/root/certificate/localhost.pfx
+      - Kestrel__Certificates__Default__Password=c32531bd-9000-4628-87b9-896e7af5c5e2
+      - App__SelfUrl=https://localhost:44354
+      - App__HealthCheckUrl=http://cars-api/health-status
+      - AuthServer__RequireHttpsMetadata=false
+      - AuthServer__Authority=http://cars-authserver
+      - ConnectionStrings__Default=Data Source=sql-server;Initial Catalog=Cars;User Id=sa;Password=myPassw0rd;MultipleActiveResultSets=true;TrustServerCertificate=True;
+      - Redis__Configuration=redis
+    ports:
+      - "44354:443"
+    depends_on:
+      sql-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy  
+    restart: on-failure    
+    volumes:
+      - ./certs:/root/certificate
+    networks:
+      - abp-network
+  cars-authserver:
+    image: be/cars-authserver:latest
+    container_name: cars-authserver
+    build:
+      context: ../../
+      dockerfile: src/Be.Cars.AuthServer/Dockerfile.local
+    environment:
+      - ASPNETCORE_URLS=https://+:443;http://+:80;
+      - App__SelfUrl=https://localhost:44334
+      - App__CorsOrigins=http://localhost:4200,http://localhost:44307
+      - AuthServer__RequireHttpsMetadata=false
+      - AuthServer__Authority=http://cars-authserver
+      - Kestrel__Certificates__Default__Path=/root/certificate/localhost.pfx
+      - Kestrel__Certificates__Default__Password=c32531bd-9000-4628-87b9-896e7af5c5e2
+      - ConnectionStrings__Default=Data Source=sql-server;Initial Catalog=Cars;User Id=sa;Password=myPassw0rd;MultipleActiveResultSets=true;TrustServerCertificate=True;
+      - Redis__Configuration=redis
+    ports:
+      - "44334:443"
+    depends_on:
+      sql-server:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: on-failure
+    volumes:
+      - ./certs:/root/certificate
+    networks:
+      - abp-network
+
+  db-migrator:
+    image: be/cars-db-migrator:latest
+    container_name: db-migrator
+    build:
+      context: ../../
+      dockerfile: src/Cars.DbMigrator/Dockerfile.local
+    environment:
+      - OpenIddict__Applications__Cars_BlazorServerTiered__RootUrl=https://localhost:44314
+      - OpenIddict__Applications__Cars_Swagger__RootUrl=https://localhost:44354
+      - ConnectionStrings__Default=Data Source=sql-server;Initial Catalog=Cars;User Id=sa;Password=myPassw0rd;MultipleActiveResultSets=true;TrustServerCertificate=True;
+      - Redis__Configuration=redis
+    restart: on-failure
+    depends_on:
+      sql-server:
+        condition: service_healthy
+    networks:
+      - abp-network
+  
+  sql-server:
+    container_name: sql-server
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    ports:
+      - "1434:1433"
+    environment:
+      SA_PASSWORD: "myPassw0rd"
+      ACCEPT_EULA: "Y"
+    volumes:
+      - sqldata:/var/opt/mssql
+    networks:
+      - abp-network
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S sql-server -U sa -P "myPassw0rd" -Q "SELECT 1" -b -o /dev/null
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+  redis:
+    container_name: redis
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - abp-network
+    healthcheck:
+      test: ["CMD", "redis-cli","ping"]      
+volumes:
+  sqldata:
+    name: cars_sqldata
+networks:
+  abp-network:
+    name: cars-network
+    driver: bridge

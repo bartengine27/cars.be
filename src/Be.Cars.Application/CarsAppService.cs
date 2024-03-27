@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Be.Cars.Localization;
+﻿using Be.Cars.Localization;
 using Volo.Abp.Application.Services;
 
 namespace Be.Cars;

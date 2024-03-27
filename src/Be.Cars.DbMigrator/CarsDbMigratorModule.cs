@@ -11,7 +11,7 @@ namespace Be.Cars.DbMigrator;
     typeof(AbpCachingStackExchangeRedisModule),
     typeof(CarsEntityFrameworkCoreModule),
     typeof(CarsApplicationContractsModule)
-    )]
+)]
 public class CarsDbMigratorModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)

@@ -5,76 +5,89 @@ using Blazorise.Icons.FontAwesome;
 using Medallion.Threading;
 using Medallion.Threading.Redis;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using Microsoft.OpenApi.Models;
 using Be.Cars.Blazor.Menus;
 using Be.Cars.Localization;
 using Be.Cars.MultiTenancy;
-using StackExchange.Redis;
 using Volo.Abp;
-using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
-using Volo.Abp.AspNetCore.Components.Server.LeptonXLiteTheme;
-using Volo.Abp.AspNetCore.Components.Server.LeptonXLiteTheme.Bundling;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonXLite.Bundling;
 using Volo.Abp.AspNetCore.Components.Web.Theming.Routing;
-using Volo.Abp.AspNetCore.Mvc.Client;
 using Volo.Abp.AspNetCore.Mvc.Localization;
-using Volo.Abp.AspNetCore.Mvc.UI;
-using Volo.Abp.AspNetCore.Mvc.UI.Bootstrap;
 using Volo.Abp.AspNetCore.Mvc.UI.Bundling;
-using Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy;
 using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
-using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared.Toolbars;
 using Volo.Abp.AspNetCore.Serilog;
+using Volo.Abp.AuditLogging.Blazor.Server;
 using Volo.Abp.Autofac;
 using Volo.Abp.AutoMapper;
-using Volo.Abp.Caching;
-using Volo.Abp.Caching.StackExchangeRedis;
-using Volo.Abp.DistributedLocking;
-using Volo.Abp.Http.Client.IdentityModel.Web;
-using Volo.Abp.Identity.Blazor.Server;
+using Volo.Abp.Identity.Pro.Blazor.Server;
+using Volo.Abp.LanguageManagement.Blazor.Server;
 using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
-using Volo.Abp.MultiTenancy;
-using Volo.Abp.SettingManagement.Blazor.Server;
 using Volo.Abp.Swashbuckle;
-using Volo.Abp.TenantManagement.Blazor.Server;
-using Volo.Abp.UI;
+using Volo.Abp.TextTemplateManagement.Blazor.Server;
 using Volo.Abp.UI.Navigation;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
-using Microsoft.IdentityModel.Logging;
-using System.Net;
-using System.Net.Http;
-using Autofac.Core;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Hosting.Internal;
+using Volo.Saas.Host.Blazor.Server;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.OpenApi.Models;
+using Be.Cars.Blazor.Components.Layout;
+using StackExchange.Redis;
+using Volo.Abp.Account.LinkUsers;
+using Volo.Abp.Account.Pro.Admin.Blazor.Server;
+using Volo.Abp.Account.Pro.Public.Blazor.Server;
+using Volo.Abp.Account.Public.Web.Impersonation;
+using Volo.Abp.Identity.Pro.Blazor;
+using Volo.Saas.Host.Blazor;
+using Volo.Abp.AspNetCore.Authentication.OpenIdConnect;
+using Volo.Abp.AspNetCore.Mvc.Client;
+using Volo.Abp.Caching;
+using Volo.Abp.Caching.StackExchangeRedis;
+using Volo.Abp.DistributedLocking;
+using Volo.Abp.Gdpr.Blazor.Extensions;
+using Volo.Abp.Gdpr.Blazor.Server;
+using Volo.Abp.Http.Client.Web;
+using Volo.Abp.Http.Client.IdentityModel.Web;
+using Volo.Abp.Security.Claims;
+using Volo.Abp.LeptonX.Shared;
+using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonX;
+using Volo.Abp.AspNetCore.Mvc.UI.Theme.LeptonX.Bundling;
+using Volo.Abp.AspNetCore.Components.Server.LeptonXTheme;
+using Volo.Abp.AspNetCore.Components.Server.LeptonXTheme.Bundling;
+using Volo.Abp.AspNetCore.Components.Web.LeptonXTheme;
+using Volo.Abp.OpenIddict.Pro.Blazor.Server;
 
 namespace Be.Cars.Blazor;
 
 [DependsOn(
-    typeof(CarsHttpApiClientModule),
     typeof(AbpCachingStackExchangeRedisModule),
     typeof(AbpDistributedLockingModule),
-    typeof(AbpAspNetCoreMvcClientModule),
-    typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule),
-    typeof(AbpHttpClientIdentityModelWebModule),
-    typeof(AbpAspNetCoreComponentsServerLeptonXLiteThemeModule),
-    typeof(AbpAspNetCoreMvcUiLeptonXLiteThemeModule),
     typeof(AbpAutofacModule),
     typeof(AbpSwashbuckleModule),
     typeof(AbpAspNetCoreSerilogModule),
-    typeof(AbpIdentityBlazorServerModule),
-    typeof(AbpTenantManagementBlazorServerModule),
-    typeof(AbpSettingManagementBlazorServerModule)
-   )]
+    typeof(AbpAspNetCoreMvcClientModule),
+    typeof(AbpAspNetCoreAuthenticationOpenIdConnectModule),
+    typeof(AbpHttpClientWebModule),
+    typeof(AbpAccountPublicWebImpersonationModule),
+    typeof(AbpHttpClientIdentityModelWebModule),
+    typeof(AbpAccountAdminBlazorServerModule),
+    typeof(AbpAccountPublicBlazorServerModule),
+    typeof(AbpAuditLoggingBlazorServerModule),
+    typeof(AbpIdentityProBlazorServerModule),
+    typeof(AbpAspNetCoreComponentsServerLeptonXThemeModule),
+    typeof(AbpAspNetCoreMvcUiLeptonXThemeModule),
+    typeof(AbpOpenIddictProBlazorServerModule),
+    typeof(LanguageManagementBlazorServerModule),
+    typeof(SaasHostBlazorServerModule),
+    typeof(TextTemplateManagementBlazorServerModule),
+    typeof(AbpGdprBlazorServerModule),
+    typeof(CarsHttpApiClientModule)
+    )]
 public class CarsBlazorModule : AbpModule
 {
     public override void PreConfigureServices(ServiceConfigurationContext context)
@@ -95,19 +108,54 @@ public class CarsBlazorModule : AbpModule
         var hostingEnvironment = context.Services.GetHostingEnvironment();
         var configuration = context.Services.GetConfiguration();
 
+        if (!configuration.GetValue<bool>("App:DisablePII"))
+        {
+            Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
+        }
+
         ConfigureUrls(configuration);
-        ConfigureCache();
         ConfigureBundles();
-        ConfigureMultiTenancy();
         ConfigureAuthentication(context, configuration);
+        ConfigureImpersonation(context, configuration);
         ConfigureAutoMapper();
         ConfigureVirtualFileSystem(hostingEnvironment);
-        ConfigureBlazorise(context);
-        ConfigureRouter(context);
-        ConfigureMenu(configuration);
+        ConfigureSwaggerServices(context.Services);
+        ConfigureCache(configuration);
         ConfigureDataProtection(context, configuration, hostingEnvironment);
         ConfigureDistributedLocking(context, configuration);
-        ConfigureSwaggerServices(context.Services);
+        ConfigureBlazorise(context);
+        ConfigureRouter();
+        ConfigureMenu(configuration);
+        ConfigureCookieConsent(context);
+        ConfigureTheme();
+    }
+
+    private void ConfigureCookieConsent(ServiceConfigurationContext context)
+    {
+        context.Services.AddAbpCookieConsent(options =>
+        {
+            options.IsEnabled = true;
+            options.CookiePolicyUrl = "/CookiePolicy";
+            options.PrivacyPolicyUrl = "/PrivacyPolicy";
+        });
+    }
+
+    private void ConfigureTheme()
+    {
+        Configure<LeptonXThemeOptions>(options =>
+        {
+            options.DefaultStyle = LeptonXStyleNames.System;
+        });
+
+        Configure<LeptonXThemeMvcOptions>(options =>
+        {
+            options.ApplicationLayout = LeptonXMvcLayouts.SideMenu;
+        });
+
+        Configure<LeptonXThemeBlazorOptions>(options =>
+        {
+            options.Layout = LeptonXBlazorLayouts.SideMenu;
+        });
     }
 
     private void ConfigureUrls(IConfiguration configuration)
@@ -116,13 +164,10 @@ public class CarsBlazorModule : AbpModule
         {
             options.Applications["MVC"].RootUrl = configuration["App:SelfUrl"];
         });
-    }
 
-    private void ConfigureCache()
-    {
-        Configure<AbpDistributedCacheOptions>(options =>
+        Configure<AbpAccountLinkUserOptions>(options =>
         {
-            options.KeyPrefix = "Cars:";
+            options.LoginUrl = configuration["AuthServer:Authority"];
         });
     }
 
@@ -132,16 +177,16 @@ public class CarsBlazorModule : AbpModule
         {
             // MVC UI
             options.StyleBundles.Configure(
-                LeptonXLiteThemeBundles.Styles.Global,
+                LeptonXThemeBundles.Styles.Global,
                 bundle =>
                 {
                     bundle.AddFiles("/global-styles.css");
                 }
             );
 
-            //BLAZOR UI
+            // Blazor UI
             options.StyleBundles.Configure(
-                BlazorLeptonXLiteThemeBundles.Styles.Global,
+                BlazorLeptonXThemeBundles.Styles.Global,
                 bundle =>
                 {
                     bundle.AddFiles("/blazor-global-styles.css");
@@ -152,22 +197,8 @@ public class CarsBlazorModule : AbpModule
         });
     }
 
-    private void ConfigureMultiTenancy()
-    {
-        Configure<AbpMultiTenancyOptions>(options =>
-        {
-            options.IsEnabled = MultiTenancyConsts.IsEnabled;
-        });
-    }
-
     private void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
     {
-        //https://stackoverflow.com/questions/50262561/correlation-failed-in-net-core-asp-net-identity-openid-connect
-        //context.Services.Configure<CookiePolicyOptions>(options =>
-        //{
-        //    options.Secure = CookieSecurePolicy.None;
-        //});
-        
         context.Services.AddAuthentication(options =>
             {
                 options.DefaultScheme = "Cookies";
@@ -181,25 +212,11 @@ public class CarsBlazorModule : AbpModule
             .AddAbpOpenIdConnect("oidc", options =>
             {
                 options.Authority = configuration["AuthServer:Authority"];
-                options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
+                options.RequireHttpsMetadata = configuration.GetValue<bool>("AuthServer:RequireHttpsMetadata");;
                 options.ResponseType = OpenIdConnectResponseType.CodeIdToken;
-                
-                if (context.Services.GetHostingEnvironment().IsDevelopment())
-                {
-                    //https://stackoverflow.com/questions/53352945/aspnetcore-authentication-correlation-failed
-                    options.BackchannelHttpHandler = new HttpClientHandler
-                    {
-                        ServerCertificateCustomValidationCallback = (sender, cert, chain, policyErrors) =>
-                        {
-                            return true;
-                        }
-                    };
-                }
 
                 options.ClientId = configuration["AuthServer:ClientId"];
                 options.ClientSecret = configuration["AuthServer:ClientSecret"];
-                //TODO only for development mode
-                //options.CorrelationCookie.SameSite = SameSiteMode.Lax;
 
                 options.SaveTokens = true;
                 options.GetClaimsFromUserInfoEndpoint = true;
@@ -209,6 +226,62 @@ public class CarsBlazorModule : AbpModule
                 options.Scope.Add("phone");
                 options.Scope.Add("Cars");
             });
+
+            if (configuration.GetValue<bool>("AuthServer:IsContainerizedOnLocalhost"))
+            {
+                context.Services.Configure<OpenIdConnectOptions>("oidc", options =>
+                {
+                    options.TokenValidationParameters.ValidIssuers = new[]
+                    {
+                        configuration["AuthServer:MetaAddress"]!.EnsureEndsWith('/'),
+                        configuration["AuthServer:Authority"]!.EnsureEndsWith('/')
+                    };
+
+                    options.MetadataAddress = configuration["AuthServer:MetaAddress"]!.EnsureEndsWith('/') +
+                                            ".well-known/openid-configuration";
+
+                    var previousOnRedirectToIdentityProvider = options.Events.OnRedirectToIdentityProvider;
+                    options.Events.OnRedirectToIdentityProvider = async ctx =>
+                    {
+                        // Intercept the redirection so the browser navigates to the right URL in your host
+                        ctx.ProtocolMessage.IssuerAddress = configuration["AuthServer:Authority"]!.EnsureEndsWith('/') + "connect/authorize";
+
+                        if (previousOnRedirectToIdentityProvider != null)
+                        {
+                            await previousOnRedirectToIdentityProvider(ctx);
+                        }
+                    };
+                    var previousOnRedirectToIdentityProviderForSignOut = options.Events.OnRedirectToIdentityProviderForSignOut;
+                    options.Events.OnRedirectToIdentityProviderForSignOut = async ctx =>
+                    {
+                        // Intercept the redirection for signout so the browser navigates to the right URL in your host
+                        ctx.ProtocolMessage.IssuerAddress = configuration["AuthServer:Authority"]!.EnsureEndsWith('/') + "connect/logout";
+
+                        if (previousOnRedirectToIdentityProviderForSignOut != null)
+                        {
+                            await previousOnRedirectToIdentityProviderForSignOut(ctx);
+                        }
+                    };
+                });
+
+            }
+
+        context.Services.Configure<AbpClaimsPrincipalFactoryOptions>(options =>
+        {
+            options.IsDynamicClaimsEnabled = true;
+        });
+    }
+
+    private void ConfigureImpersonation(ServiceConfigurationContext context, IConfiguration configuration)
+    {
+        context.Services.Configure<SaasHostBlazorOptions>(options =>
+        {
+            options.EnableTenantImpersonation = true;
+        });
+        context.Services.Configure<AbpIdentityProBlazorOptions>(options =>
+        {
+            options.EnableUserImpersonation = true;
+        });
     }
 
     private void ConfigureVirtualFileSystem(IWebHostEnvironment hostingEnvironment)
@@ -224,6 +297,50 @@ public class CarsBlazorModule : AbpModule
         }
     }
 
+    private void ConfigureSwaggerServices(IServiceCollection services)
+    {
+        services.AddAbpSwaggerGen(
+            options =>
+            {
+                options.SwaggerDoc("v1", new OpenApiInfo { Title = "Cars API", Version = "v1" });
+                options.DocInclusionPredicate((docName, description) => true);
+                options.CustomSchemaIds(type => type.FullName);
+            }
+        );
+    }
+
+    private void ConfigureCache(IConfiguration configuration)
+    {
+        Configure<AbpDistributedCacheOptions>(options =>
+        {
+            options.KeyPrefix = "Cars:";
+        });
+    }
+
+    private void ConfigureDataProtection(
+        ServiceConfigurationContext context,
+        IConfiguration configuration,
+        IWebHostEnvironment hostingEnvironment)
+    {
+        var dataProtectionBuilder = context.Services.AddDataProtection().SetApplicationName("Cars");
+        if (!hostingEnvironment.IsDevelopment())
+        {
+            var redis = ConnectionMultiplexer.Connect(configuration["Redis:Configuration"]!);
+            dataProtectionBuilder.PersistKeysToStackExchangeRedis(redis, "Cars-Protection-Keys");
+        }
+    }
+
+    private void ConfigureDistributedLocking(
+        ServiceConfigurationContext context,
+        IConfiguration configuration)
+    {
+        context.Services.AddSingleton<IDistributedLockProvider>(sp =>
+        {
+            var connection = ConnectionMultiplexer.Connect(configuration["Redis:Configuration"]!);
+            return new RedisDistributedSynchronizationProvider(connection.GetDatabase());
+        });
+    }
+
     private void ConfigureBlazorise(ServiceConfigurationContext context)
     {
         context.Services
@@ -237,14 +354,9 @@ public class CarsBlazorModule : AbpModule
         {
             options.MenuContributors.Add(new CarsMenuContributor(configuration));
         });
-
-        Configure<AbpToolbarOptions>(options =>
-        {
-            options.Contributors.Add(new CarsToolbarContributor());
-        });
     }
 
-    private void ConfigureRouter(ServiceConfigurationContext context)
+    private void ConfigureRouter()
     {
         Configure<AbpRouterOptions>(options =>
         {
@@ -260,61 +372,6 @@ public class CarsBlazorModule : AbpModule
         });
     }
 
-    private void ConfigureSwaggerServices(IServiceCollection services)
-    {
-        services.AddAbpSwaggerGen(
-            options =>
-            {
-                options.SwaggerDoc("v1", new OpenApiInfo { Title = "Cars API", Version = "v1" });
-                options.DocInclusionPredicate((docName, description) => true);
-                options.CustomSchemaIds(type => type.FullName);
-            }
-        );
-    }
-
-    /// <summary>
-    /// <para>
-    /// Antiforgery tokens are used to prevent Cross-Site Request Forgery (CSRF) attacks and are particularly relevant in applications 
-    /// where form data is submitted. These tokens rely on the application's data protection APIs to encrypt and decrypt the tokens. 
-    /// When running in a distributed environment, such as behind a load balancer with multiple application instances, all instances must 
-    /// share the same data protection keys to successfully encrypt and decrypt tokens.
-    /// </para>
-    /// <para>
-    /// As we are using Redis as a distributed cache, we can use it to store the data protection keys, also in Development as NGINX is used as 
-    /// a load balancer in Development (at least in the Proxmox setup).
-    /// </para>
-    /// </summary>
-    /// <param name="context"></param>
-    /// <param name="configuration"></param>
-    /// <param name="hostingEnvironment"></param>
-    /// <remarks>
-    /// If you see an "The antiforgery token could not be decrypted." error, check Redis and usage of NGINX for load balancing.
-    /// </remarks>
-    private void ConfigureDataProtection(
-        ServiceConfigurationContext context,
-        IConfiguration configuration,
-        IWebHostEnvironment hostingEnvironment)
-    {
-        var dataProtectionBuilder = context.Services.AddDataProtection().SetApplicationName("Cars");
-        //if (!hostingEnvironment.IsDevelopment())
-        {
-            var redis = ConnectionMultiplexer.Connect(configuration["Redis:Configuration"]);
-            dataProtectionBuilder.PersistKeysToStackExchangeRedis(redis, "Cars-Protection-Keys");
-        }
-    }
-
-    private void ConfigureDistributedLocking(
-        ServiceConfigurationContext context,
-        IConfiguration configuration)
-    {
-        context.Services.AddSingleton<IDistributedLockProvider>(sp =>
-        {
-            var connection = ConnectionMultiplexer
-                .Connect(configuration["Redis:Configuration"]);
-            return new RedisDistributedSynchronizationProvider(connection.GetDatabase());
-        });
-    }
-
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
     {
         var env = context.GetEnvironment();
@@ -323,9 +380,6 @@ public class CarsBlazorModule : AbpModule
         if (env.IsDevelopment())
         {
             app.UseDeveloperExceptionPage();
-            IdentityModelEventSource.ShowPII = true;
-            //trust all certificates
-            ServicePointManager.ServerCertificateValidationCallback += (o, c, ch, er) => true;
         }
 
         app.UseAbpRequestLocalization();
@@ -333,12 +387,12 @@ public class CarsBlazorModule : AbpModule
         if (!env.IsDevelopment())
         {
             app.UseErrorPage();
+            app.UseHsts();
         }
 
         app.UseCorrelationId();
+        app.UseAbpSecurityHeaders();
         app.UseStaticFiles();
-        //https://stackoverflow.com/questions/50262561/correlation-failed-in-net-core-asp-net-identity-openid-connect
-        //app.UseCookiePolicy();
         app.UseRouting();
         app.UseAuthentication();
 
@@ -347,6 +401,7 @@ public class CarsBlazorModule : AbpModule
             app.UseMultiTenancy();
         }
 
+        app.UseDynamicClaims();
         app.UseAuthorization();
         app.UseSwagger();
         app.UseAbpSwaggerUI(options =>

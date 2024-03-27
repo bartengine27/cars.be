@@ -1,9 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <RootNamespace>Be.Cars</RootNamespace>
   </PropertyGroup>
@@ -13,23 +13,23 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Volo.Abp.Account.HttpApi.Client" Version="8.0.3" />
-    <PackageReference Include="Volo.Abp.Identity.HttpApi.Client" Version="8.0.3" />
-    <PackageReference Include="Volo.Abp.PermissionManagement.HttpApi.Client" Version="8.0.3" />
-    <PackageReference Include="Volo.Abp.TenantManagement.HttpApi.Client" Version="8.0.3" />
-    <PackageReference Include="Volo.Abp.FeatureManagement.HttpApi.Client" Version="8.0.3" />
-    <PackageReference Include="Volo.Abp.SettingManagement.HttpApi.Client" Version="8.0.3" />
+    <PackageReference Include="Volo.Abp.PermissionManagement.HttpApi.Client" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.FeatureManagement.HttpApi.Client" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.SettingManagement.HttpApi.Client" Version="8.0.5" />
+    <PackageReference Include="Volo.Saas.Host.HttpApi.Client" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.AuditLogging.HttpApi.Client" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.Identity.Pro.HttpApi.Client" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.Account.Pro.Admin.HttpApi.Client" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.Account.Pro.Public.HttpApi.Client" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.OpenIddict.Pro.HttpApi.Client" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.LanguageManagement.HttpApi.Client" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.TextTemplateManagement.HttpApi.Client" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.Gdpr.HttpApi.Client" Version="8.0.5" />
   </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="**\*generate-proxy.json" />
-    <Content Remove="**\*generate-proxy.json" />
-  </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
-    <PackageReference Include="Volo.Abp.AspNetCore">
-      <Version>8.0.3</Version>
-    </PackageReference>
-  </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="**\*generate-proxy.json" />
+		<Content Remove="**\*generate-proxy.json" />
+	</ItemGroup>
 
 </Project>

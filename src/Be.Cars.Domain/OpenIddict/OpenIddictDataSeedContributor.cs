@@ -38,7 +38,7 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
         IOpenIddictScopeRepository openIddictScopeRepository,
         IOpenIddictScopeManager scopeManager,
         IPermissionDataSeeder permissionDataSeeder,
-        IStringLocalizer<OpenIddictResponse> l )
+        IStringLocalizer<OpenIddictResponse> l)
     {
         _configuration = configuration;
         _openIddictApplicationRepository = openIddictApplicationRepository;
@@ -79,81 +79,17 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
 
         var configurationSection = _configuration.GetSection("OpenIddict:Applications");
 
-        //Web Client
-        var webClientId = configurationSection["Cars_Web:ClientId"];
-        if (!webClientId.IsNullOrWhiteSpace())
-        {
-            var webClientRootUrl = configurationSection["Cars_Web:RootUrl"].EnsureEndsWith('/');
 
-            /* Cars_Web client is only needed if you created a tiered
-             * solution. Otherwise, you can delete this client. */
-            await CreateApplicationAsync(
-                name: webClientId!,
-                type: OpenIddictConstants.ClientTypes.Confidential,
-                consentType: OpenIddictConstants.ConsentTypes.Implicit,
-                displayName: "Web Application",
-                secret: configurationSection["Cars_Web:ClientSecret"] ?? "1q2w3e*",
-                grantTypes: new List<string> //Hybrid flow
-                {
-                    OpenIddictConstants.GrantTypes.AuthorizationCode, OpenIddictConstants.GrantTypes.Implicit
-                },
-                scopes: commonScopes,
-                redirectUri: $"{webClientRootUrl}signin-oidc",
-                clientUri: webClientRootUrl,
-                postLogoutRedirectUri: $"{webClientRootUrl}signout-callback-oidc"
-            );
-        }
 
-        //Console Test / Angular Client
-        var consoleAndAngularClientId = configurationSection["Cars_App:ClientId"];
-        if (!consoleAndAngularClientId.IsNullOrWhiteSpace())
-        {
-            var consoleAndAngularClientRootUrl = configurationSection["Cars_App:RootUrl"]?.TrimEnd('/');
-            await CreateApplicationAsync(
-                name: consoleAndAngularClientId!,
-                type: OpenIddictConstants.ClientTypes.Public,
-                consentType: OpenIddictConstants.ConsentTypes.Implicit,
-                displayName: "Console Test / Angular Application",
-                secret: null,
-                grantTypes: new List<string> {
-                    OpenIddictConstants.GrantTypes.AuthorizationCode,
-                    OpenIddictConstants.GrantTypes.Password,
-                    OpenIddictConstants.GrantTypes.ClientCredentials,
-                    OpenIddictConstants.GrantTypes.RefreshToken
-                },
-                scopes: commonScopes,
-                redirectUri: consoleAndAngularClientRootUrl,
-                clientUri: consoleAndAngularClientRootUrl,
-                postLogoutRedirectUri: consoleAndAngularClientRootUrl
-            );
-        }
+        
+        
 
-        // Blazor Client
-        var blazorClientId = configurationSection["Cars_Blazor:ClientId"];
-        if (!blazorClientId.IsNullOrWhiteSpace())
-        {
-            var blazorRootUrl = configurationSection["Cars_Blazor:RootUrl"]?.TrimEnd('/');
-
-            await CreateApplicationAsync(
-                name: blazorClientId!,
-                type: OpenIddictConstants.ClientTypes.Public,
-                consentType: OpenIddictConstants.ConsentTypes.Implicit,
-                displayName: "Blazor Application",
-                secret: null,
-                grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, },
-                scopes: commonScopes,
-                redirectUri: $"{blazorRootUrl}/authentication/login-callback",
-                clientUri: blazorRootUrl,
-                postLogoutRedirectUri: $"{blazorRootUrl}/authentication/logout-callback"
-            );
-        }
 
         // Blazor Server Tiered Client
         var blazorServerTieredClientId = configurationSection["Cars_BlazorServerTiered:ClientId"];
         if (!blazorServerTieredClientId.IsNullOrWhiteSpace())
         {
-            var blazorServerTieredRootUrl =
-                configurationSection["Cars_BlazorServerTiered:RootUrl"].EnsureEndsWith('/');
+            var blazorServerTieredRootUrl = configurationSection["Cars_BlazorServerTiered:RootUrl"]!.EnsureEndsWith('/');
 
             await CreateApplicationAsync(
                 name: blazorServerTieredClientId!,
@@ -163,14 +99,17 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                 secret: configurationSection["Cars_BlazorServerTiered:ClientSecret"] ?? "1q2w3e*",
                 grantTypes: new List<string> //Hybrid flow
                 {
-                    OpenIddictConstants.GrantTypes.AuthorizationCode, OpenIddictConstants.GrantTypes.Implicit
+                    OpenIddictConstants.GrantTypes.AuthorizationCode, OpenIddictConstants.GrantTypes.Implicit, OpenIddictConstants.GrantTypes.ClientCredentials
                 },
                 scopes: commonScopes,
                 redirectUri: $"{blazorServerTieredRootUrl}signin-oidc",
+                postLogoutRedirectUri: $"{blazorServerTieredRootUrl}signout-callback-oidc",
                 clientUri: blazorServerTieredRootUrl,
-                postLogoutRedirectUri: $"{blazorServerTieredRootUrl}signout-callback-oidc"
+                logoUri: "/images/clients/blazor.svg"
             );
         }
+
+
 
         // Swagger Client
         var swaggerClientId = configurationSection["Cars_Swagger:ClientId"];
@@ -180,19 +119,16 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
 
             await CreateApplicationAsync(
                 name: swaggerClientId!,
-                type: OpenIddictConstants.ClientTypes.Public,
+                //type: OpenIddictConstants.ClientTypes.Public,
+                type: OpenIddictConstants.ClientTypes.Confidential,
                 consentType: OpenIddictConstants.ConsentTypes.Implicit,
                 displayName: "Swagger Application",
-                secret: configurationSection["Cars_Swagger:ClientSecret"] ?? "1q2w3e*",
-                grantTypes: new List<string> { 
-                    OpenIddictConstants.GrantTypes.AuthorizationCode, 
-                    OpenIddictConstants.GrantTypes.Password, 
-                    OpenIddictConstants.GrantTypes.ClientCredentials,
-                    OpenIddictConstants.GrantTypes.Implicit,
-                },
+                secret: configurationSection["Cars_BlazorServerTiered:ClientSecret"] ?? "1q2w3e*",
+                grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, OpenIddictConstants.GrantTypes.ClientCredentials, },
                 scopes: commonScopes,
                 redirectUri: $"{swaggerRootUrl}/swagger/oauth2-redirect.html",
-                clientUri: swaggerRootUrl
+                clientUri: swaggerRootUrl,
+                logoUri: "/images/clients/swagger.svg"
             );
         }
     }
@@ -205,10 +141,11 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
         string? secret,
         List<string> grantTypes,
         List<string> scopes,
-        string? clientUri = null,
         string? redirectUri = null,
         string? postLogoutRedirectUri = null,
-        List<string>? permissions = null)
+        List<string>? permissions = null,
+        string? clientUri = null,
+        string? logoUri = null)
     {
         if (!string.IsNullOrEmpty(secret) && string.Equals(type, OpenIddictConstants.ClientTypes.Public,
                 StringComparison.OrdinalIgnoreCase))
@@ -223,15 +160,15 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
         }
 
         var client = await _openIddictApplicationRepository.FindByClientIdAsync(name);
-        
+
         var application = new AbpApplicationDescriptor {
             ClientId = name,
-            //Type = type,
             ClientType = type,
             ClientSecret = secret,
             ConsentType = consentType,
             DisplayName = displayName,
             ClientUri = clientUri,
+            LogoUri = logoUri,
         };
 
         Check.NotNullOrEmpty(grantTypes, nameof(grantTypes));
@@ -396,8 +333,8 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
 
         if (!HasSameRedirectUris(client, application))
         {
-            client.RedirectUris = JsonSerializer.Serialize(application.RedirectUris.Select(q => q.ToString().TrimEnd('/')));
-            client.PostLogoutRedirectUris = JsonSerializer.Serialize(application.PostLogoutRedirectUris.Select(q => q.ToString().TrimEnd('/')));
+            client.RedirectUris = JsonSerializer.Serialize(application.RedirectUris.Select(q => q.ToString().RemovePostFix("/")));
+            client.PostLogoutRedirectUris = JsonSerializer.Serialize(application.PostLogoutRedirectUris.Select(q => q.ToString().RemovePostFix("/")));
 
             await _applicationManager.UpdateAsync(client.ToModel());
         }
@@ -411,7 +348,7 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
 
     private bool HasSameRedirectUris(OpenIddictApplication existingClient, AbpApplicationDescriptor application)
     {
-        return existingClient.RedirectUris == JsonSerializer.Serialize(application.RedirectUris.Select(q => q.ToString().TrimEnd('/')));
+        return existingClient.RedirectUris == JsonSerializer.Serialize(application.RedirectUris.Select(q => q.ToString().RemovePostFix("/")));
     }
 
     private bool HasSameScopes(OpenIddictApplication existingClient, AbpApplicationDescriptor application)

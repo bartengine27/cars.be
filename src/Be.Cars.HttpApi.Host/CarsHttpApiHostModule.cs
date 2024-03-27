@@ -4,11 +4,16 @@ using System.IO;
 using System.Linq;
 using Medallion.Threading;
 using Medallion.Threading.Redis;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.MicrosoftAccount;
+using Microsoft.AspNetCore.Authentication.Twitter;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
+using Volo.Abp.PermissionManagement;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -16,26 +21,23 @@ using Be.Cars.EntityFrameworkCore;
 using Be.Cars.MultiTenancy;
 using StackExchange.Redis;
 using Microsoft.OpenApi.Models;
+using Be.Cars.HealthChecks;
+using Volo.Abp.Caching.StackExchangeRedis;
+using Volo.Abp.DistributedLocking;
 using Volo.Abp;
+using Volo.Abp.Account;
 using Volo.Abp.AspNetCore.Mvc;
 using Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy;
+using Volo.Abp.AspNetCore.Mvc.UI.Theme.Shared;
 using Volo.Abp.AspNetCore.Serilog;
 using Volo.Abp.Autofac;
 using Volo.Abp.Caching;
-using Volo.Abp.Caching.StackExchangeRedis;
-using Volo.Abp.DistributedLocking;
-using Volo.Abp.Localization;
+using Volo.Abp.Identity.AspNetCore;
 using Volo.Abp.Modularity;
+using Volo.Abp.Security.Claims;
 using Volo.Abp.Swashbuckle;
+using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
-using System.Net;
-using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using System.Net.Http;
-using Microsoft.IdentityModel.Protocols.OpenIdConnect;
-using Serilog.Core;
-using Microsoft.AspNetCore.Hosting.Server;
-using static Volo.Abp.Identity.Settings.IdentitySettingNames;
 
 namespace Be.Cars;
 
@@ -45,11 +47,12 @@ namespace Be.Cars;
     typeof(AbpCachingStackExchangeRedisModule),
     typeof(AbpDistributedLockingModule),
     typeof(AbpAspNetCoreMvcUiMultiTenancyModule),
+    typeof(AbpIdentityAspNetCoreModule),
     typeof(CarsApplicationModule),
     typeof(CarsEntityFrameworkCoreModule),
-    typeof(AbpAspNetCoreSerilogModule),
-    typeof(AbpSwashbuckleModule)
-)]
+    typeof(AbpSwashbuckleModule),
+    typeof(AbpAspNetCoreSerilogModule)
+    )]
 public class CarsHttpApiHostModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
@@ -57,19 +60,50 @@ public class CarsHttpApiHostModule : AbpModule
         var configuration = context.Services.GetConfiguration();
         var hostingEnvironment = context.Services.GetHostingEnvironment();
 
+        if (!configuration.GetValue<bool>("App:DisablePII"))
+        {
+            Microsoft.IdentityModel.Logging.IdentityModelEventSource.ShowPII = true;
+        }
+
+        ConfigureUrls(configuration);
         ConfigureConventionalControllers();
         ConfigureAuthentication(context, configuration);
+        ConfigureSwagger(context, configuration);
         ConfigureCache(configuration);
         ConfigureVirtualFileSystem(context);
         ConfigureDataProtection(context, configuration, hostingEnvironment);
         ConfigureDistributedLocking(context, configuration);
         ConfigureCors(context, configuration);
-        ConfigureSwaggerServices(context, configuration);
+        ConfigureExternalProviders(context);
+        ConfigureHealthChecks(context);
+
+        Configure<PermissionManagementOptions>(options =>
+        {
+            options.IsDynamicPermissionStoreEnabled = true;
+        });
+    }
+
+    private void ConfigureHealthChecks(ServiceConfigurationContext context)
+    {
+        context.Services.AddCarsHealthChecks();
+    }
+
+    private void ConfigureUrls(IConfiguration configuration)
+    {
+        Configure<AppUrlOptions>(options =>
+        {
+            options.Applications["Angular"].RootUrl = configuration["App:AngularUrl"];
+            options.Applications["Angular"].Urls[AccountUrlNames.PasswordReset] = "account/reset-password";
+            options.Applications["Angular"].Urls[AccountUrlNames.EmailConfirmation] = "account/email-confirmation";
+        });
     }
 
     private void ConfigureCache(IConfiguration configuration)
     {
-        Configure<AbpDistributedCacheOptions>(options => { options.KeyPrefix = "Cars:"; });
+        Configure<AbpDistributedCacheOptions>(options =>
+        {
+            options.KeyPrefix = "Cars:";
+        });
     }
 
     private void ConfigureVirtualFileSystem(ServiceConfigurationContext context)
@@ -80,18 +114,11 @@ public class CarsHttpApiHostModule : AbpModule
         {
             Configure<AbpVirtualFileSystemOptions>(options =>
             {
-                options.FileSets.ReplaceEmbeddedByPhysical<CarsDomainSharedModule>(
-                    Path.Combine(hostingEnvironment.ContentRootPath,
-                        $"..{Path.DirectorySeparatorChar}Be.Cars.Domain.Shared"));
-                options.FileSets.ReplaceEmbeddedByPhysical<CarsDomainModule>(
-                    Path.Combine(hostingEnvironment.ContentRootPath,
-                        $"..{Path.DirectorySeparatorChar}Be.Cars.Domain"));
-                options.FileSets.ReplaceEmbeddedByPhysical<CarsApplicationContractsModule>(
-                    Path.Combine(hostingEnvironment.ContentRootPath,
-                        $"..{Path.DirectorySeparatorChar}Be.Cars.Application.Contracts"));
-                options.FileSets.ReplaceEmbeddedByPhysical<CarsApplicationModule>(
-                    Path.Combine(hostingEnvironment.ContentRootPath,
-                        $"..{Path.DirectorySeparatorChar}Be.Cars.Application"));
+                options.FileSets.ReplaceEmbeddedByPhysical<CarsDomainSharedModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}Be.Cars.Domain.Shared", Path.DirectorySeparatorChar)));
+                options.FileSets.ReplaceEmbeddedByPhysical<CarsDomainModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}Be.Cars.Domain", Path.DirectorySeparatorChar)));
+                options.FileSets.ReplaceEmbeddedByPhysical<CarsApplicationContractsModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}Be.Cars.Application.Contracts", Path.DirectorySeparatorChar)));
+                options.FileSets.ReplaceEmbeddedByPhysical<CarsApplicationModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}Be.Cars.Application", Path.DirectorySeparatorChar)));
+                options.FileSets.ReplaceEmbeddedByPhysical<CarsHttpApiModule>(Path.Combine(hostingEnvironment.ContentRootPath, string.Format("..{0}..{0}src{0}Be.Cars.HttpApi", Path.DirectorySeparatorChar)));
             });
         }
     }
@@ -107,115 +134,55 @@ public class CarsHttpApiHostModule : AbpModule
     private void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
     {
         context.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddAbpOpenIdConnect("oidc", options =>
-            {                
+            .AddJwtBearer(options =>
+            {
                 options.Authority = configuration["AuthServer:Authority"];
-                options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
-                options.ResponseType = OpenIdConnectResponseType.CodeIdToken;
-
-                if (context.Services.GetHostingEnvironment().IsDevelopment())
-                {
-                    //https://stackoverflow.com/questions/53352945/aspnetcore-authentication-correlation-failed
-                    options.BackchannelHttpHandler = new HttpClientHandler
-                    {
-                        ServerCertificateCustomValidationCallback = (sender, cert, chain, policyErrors) =>
-                        {
-                            return true;
-                        }
-                    };
-                }
-
-                options.ClientId = configuration["AuthServer:ClientId"];
-                options.ClientSecret = configuration["AuthServer:ClientSecret"];
-                //TODO only for development mode
-                //options.CorrelationCookie.SameSite = SameSiteMode.Lax;
-
-                options.SaveTokens = true;
-                options.GetClaimsFromUserInfoEndpoint = true;
-
-                options.Scope.Add("roles");
-                options.Scope.Add("email");
-                options.Scope.Add("phone");
-                options.Scope.Add("Cars");
+                options.RequireHttpsMetadata = configuration.GetValue<bool>("AuthServer:RequireHttpsMetadata");
+                options.Audience = "Cars";
             });
+
+        context.Services.Configure<AbpClaimsPrincipalFactoryOptions>(options =>
+        {
+            options.IsDynamicClaimsEnabled = true;
+        });
     }
 
-    /// <summary>
-    /// Configure the Swagger service with OIDC authentication:
-    /// <para>
-    /// <list type="bullet">
-    /// <item>AbpSwaggerOidcFlows.AuthorizationCode: The "authorization_code" flow is the default and suggested flow.Doesn't require a client secret when even there is a field for it.</item>
-    /// <item>AbpSwaggerOidcFlows.Implicit: The deprecated "implicit" flow that was used for javascript applications.</item>
-    /// <item>AbpSwaggerOidcFlows.Password: The legacy password flow which is also known as Resource Ownder Password flow. You need to provide a user name, password and client secret for it.</item>
-    /// <item>AbpSwaggerOidcFlows.ClientCredentials: The "client_credentials" flow that is used for server to server interactions.</item>
-    /// </list>
-    /// <see cref="AbpSwaggerOidcFlows.AuthorizationCode"/> and <see cref="AbpSwaggerOidcFlows.ClientCredentials"/> are used in this case.
-    /// </para>
-    /// <para>
-    /// Only one scope is enabled: Cars
-    /// </para>
-    /// </summary>
-    /// <param name="context"></param>
-    /// <param name="configuration"></param>
-    private static void ConfigureSwaggerServices(ServiceConfigurationContext context, IConfiguration configuration)
+    private static void ConfigureSwagger(ServiceConfigurationContext context, IConfiguration configuration)
     {
-        context.Services.AddAbpSwaggerGenWithOidc(
-            configuration["AuthServer:Authority"],
-            scopes: new[] { "Cars" },
-            // "authorization_code"
-            flows: new[] { AbpSwaggerOidcFlows.AuthorizationCode, AbpSwaggerOidcFlows.ClientCredentials},
-            // When deployed on K8s, should be metadata URL of the reachable DNS over internet like https://myauthserver.company.com
-            discoveryEndpoint: configuration["AuthServer:Authority"],
+        context.Services.AddAbpSwaggerGenWithOAuth(
+            configuration["AuthServer:Authority"]!,
+            new Dictionary<string, string>
+            {
+                    {"Cars", "Cars API"}
+            },
             options =>
             {
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "Cars API", Version = "v1" });
                 options.DocInclusionPredicate((docName, description) => true);
                 options.CustomSchemaIds(type => type.FullName);
-            }
-        );
+            });
     }
 
-    /// <summary>
-    /// <para>
-    /// Antiforgery tokens are used to prevent Cross-Site Request Forgery (CSRF) attacks and are particularly relevant in applications 
-    /// where form data is submitted. These tokens rely on the application's data protection APIs to encrypt and decrypt the tokens. 
-    /// When running in a distributed environment, such as behind a load balancer with multiple application instances, all instances must 
-    /// share the same data protection keys to successfully encrypt and decrypt tokens.
-    /// </para>
-    /// <para>
-    /// As we are using Redis as a distributed cache, we can use it to store the data protection keys, also in Development as NGINX is used as 
-    /// a load balancer in Development (at least in the Proxmox setup).
-    /// </para>
-    /// </summary>
-    /// <param name="context"></param>
-    /// <param name="configuration"></param>
-    /// <param name="hostingEnvironment"></param>
-    /// <remarks>
-    /// If you see an "The antiforgery token could not be decrypted." error, check Redis and usage of NGINX for load balancing.
-    /// </remarks>
     private void ConfigureDataProtection(
         ServiceConfigurationContext context,
         IConfiguration configuration,
         IWebHostEnvironment hostingEnvironment)
     {
         var dataProtectionBuilder = context.Services.AddDataProtection().SetApplicationName("Cars");
-        
-        //if (!hostingEnvironment.IsDevelopment())
+        if (!hostingEnvironment.IsDevelopment())
         {
-            var redis = ConnectionMultiplexer.Connect(configuration["Redis:Configuration"]);
+            var redis = ConnectionMultiplexer.Connect(configuration["Redis:Configuration"]!);
             dataProtectionBuilder.PersistKeysToStackExchangeRedis(redis, "Cars-Protection-Keys");
-            ServicePointManager.ServerCertificateValidationCallback += (o, c, ch, er) => true;
         }
     }
 
     private void ConfigureDistributedLocking(
-        ServiceConfigurationContext context,
-        IConfiguration configuration)
+            ServiceConfigurationContext context,
+            IConfiguration configuration)
     {
         context.Services.AddSingleton<IDistributedLockProvider>(sp =>
         {
-            var connection = ConnectionMultiplexer
-                .Connect(configuration["Redis:Configuration"]);
+            var connection = ConnectionMultiplexer.Connect(configuration["Redis:Configuration"]!);
             return new RedisDistributedSynchronizationProvider(connection.GetDatabase());
         });
     }
@@ -227,10 +194,12 @@ public class CarsHttpApiHostModule : AbpModule
             options.AddDefaultPolicy(builder =>
             {
                 builder
-                    .WithOrigins(configuration["App:CorsOrigins"]?
-                        .Split(",", StringSplitOptions.RemoveEmptyEntries)
-                        .Select(o => o.RemovePostFix("/"))
-                        .ToArray() ?? Array.Empty<string>())
+                    .WithOrigins(
+                        configuration["App:CorsOrigins"]?
+                            .Split(",", StringSplitOptions.RemoveEmptyEntries)
+                            .Select(o => o.Trim().RemovePostFix("/"))
+                            .ToArray() ?? Array.Empty<string>()
+                    )
                     .WithAbpExposedHeaders()
                     .SetIsOriginAllowedToAllowWildcardSubdomains()
                     .AllowAnyHeader()
@@ -238,6 +207,35 @@ public class CarsHttpApiHostModule : AbpModule
                     .AllowCredentials();
             });
         });
+    }
+
+    private void ConfigureExternalProviders(ServiceConfigurationContext context)
+    {
+        context.Services
+            .AddDynamicExternalLoginProviderOptions<GoogleOptions>(
+                GoogleDefaults.AuthenticationScheme,
+                options =>
+                {
+                    options.WithProperty(x => x.ClientId);
+                    options.WithProperty(x => x.ClientSecret, isSecret: true);
+                }
+            )
+            .AddDynamicExternalLoginProviderOptions<MicrosoftAccountOptions>(
+                MicrosoftAccountDefaults.AuthenticationScheme,
+                options =>
+                {
+                    options.WithProperty(x => x.ClientId);
+                    options.WithProperty(x => x.ClientSecret, isSecret: true);
+                }
+            )
+            .AddDynamicExternalLoginProviderOptions<TwitterOptions>(
+                TwitterDefaults.AuthenticationScheme,
+                options =>
+                {
+                    options.WithProperty(x => x.ConsumerKey);
+                    options.WithProperty(x => x.ConsumerSecret, isSecret: true);
+                }
+            );
     }
 
     public override void OnApplicationInitialization(ApplicationInitializationContext context)
@@ -251,8 +249,8 @@ public class CarsHttpApiHostModule : AbpModule
         }
 
         app.UseAbpRequestLocalization();
-        app.UseCorrelationId();
         app.UseStaticFiles();
+        app.UseAbpSecurityHeaders();
         app.UseRouting();
         app.UseCors();
         app.UseAuthentication();
@@ -262,6 +260,8 @@ public class CarsHttpApiHostModule : AbpModule
             app.UseMultiTenancy();
         }
 
+        app.UseUnitOfWork();
+        app.UseDynamicClaims();
         app.UseAuthorization();
 
         app.UseSwagger();
@@ -271,12 +271,9 @@ public class CarsHttpApiHostModule : AbpModule
 
             var configuration = context.GetConfiguration();
             options.OAuthClientId(configuration["AuthServer:SwaggerClientId"]);
-            options.OAuthScopes("Cars");
         });
-
         app.UseAuditing();
         app.UseAbpSerilogEnrichers();
-        app.UseUnitOfWork();
         app.UseConfiguredEndpoints();
     }
 }

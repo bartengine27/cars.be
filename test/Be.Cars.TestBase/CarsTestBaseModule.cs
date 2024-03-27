@@ -13,15 +13,10 @@ namespace Be.Cars;
     typeof(AbpAutofacModule),
     typeof(AbpTestBaseModule),
     typeof(AbpAuthorizationModule),
-    typeof(CarsDomainModule)
-    )]
+    typeof(AbpBackgroundJobsAbstractionsModule)
+)]
 public class CarsTestBaseModule : AbpModule
 {
-    public override void PreConfigureServices(ServiceConfigurationContext context)
-    {
-
-    }
-
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
         Configure<AbpBackgroundJobOptions>(options =>

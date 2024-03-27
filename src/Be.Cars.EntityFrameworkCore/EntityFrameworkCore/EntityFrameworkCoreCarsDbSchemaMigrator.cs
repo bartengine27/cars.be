@@ -12,15 +12,14 @@ public class EntityFrameworkCoreCarsDbSchemaMigrator
 {
     private readonly IServiceProvider _serviceProvider;
 
-    public EntityFrameworkCoreCarsDbSchemaMigrator(
-        IServiceProvider serviceProvider)
+    public EntityFrameworkCoreCarsDbSchemaMigrator(IServiceProvider serviceProvider)
     {
         _serviceProvider = serviceProvider;
     }
 
     public async Task MigrateAsync()
     {
-        /* We intentionally resolving the CarsDbContext
+        /* We intentionally resolve the CarsDbContext
          * from IServiceProvider (instead of directly injecting it)
          * to properly get the connection string of the current tenant in the
          * current scope.

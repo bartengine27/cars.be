@@ -1,11 +1,11 @@
-﻿using Be.Cars.EntityFrameworkCore;
-using Volo.Abp.Modularity;
+﻿using Volo.Abp.Modularity;
 
 namespace Be.Cars;
 
 [DependsOn(
-    typeof(CarsEntityFrameworkCoreTestModule)
-    )]
+    typeof(CarsDomainModule),
+    typeof(CarsTestBaseModule)
+)]
 public class CarsDomainTestModule : AbpModule
 {
 

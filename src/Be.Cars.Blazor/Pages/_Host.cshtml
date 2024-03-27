@@ -1,8 +1,8 @@
 ﻿@page "/"
 @namespace Be.Cars.Blazor.Pages
 @using System.Globalization
-@using Volo.Abp.AspNetCore.Components.Web.LeptonXLiteTheme.Themes.LeptonXLite
-@using Volo.Abp.AspNetCore.Components.Server.LeptonXLiteTheme.Bundling
+@using Volo.Abp.AspNetCore.Components.Web.LeptonXTheme.Components
+@using Volo.Abp.AspNetCore.Components.Server.LeptonXTheme.Bundling
 @using Volo.Abp.Localization
 @{
     Layout = null;
@@ -14,13 +14,13 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Be.Cars.Blazor.Server</title>
+    <title>Cars</title>
     <base href="~/" />
     
-    <abp-style-bundle name="@BlazorLeptonXLiteThemeBundles.Styles.Global"/>
+    <abp-style-bundle name="@BlazorLeptonXThemeBundles.Styles.Global" />
+    <leptonx-theme-appearance />
 </head>
-<body class="abp-application-layout bg-light @rtl">
-
+<body class="abp-application-layout @rtl">
     <component type="typeof(App)" render-mode="Server" />
 
     <div id="blazor-error-ui">
@@ -34,6 +34,6 @@
         <a class="dismiss">🗙</a>
     </div>
 
-    <abp-script-bundle name="@BlazorLeptonXLiteThemeBundles.Scripts.Global" />
+    <abp-script-bundle name="@BlazorLeptonXThemeBundles.Scripts.Global" />
 </body>
 </html>

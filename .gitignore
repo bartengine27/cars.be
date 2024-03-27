@@ -254,6 +254,8 @@ paket-files/
 # Cars
 src/Be.Cars.Web/Logs/*
 src/Be.Cars.Web.Host/Logs/*
+src/Be.Cars.Web.Public/Logs/*
+src/Be.Cars.Web.Public/Logs/*
 src/Be.Cars.AuthServer/Logs/*
 src/Be.Cars.HttpApi.Host/Logs/*
 src/Be.Cars.HttpApi.HostWithIds/Logs/*
@@ -263,3 +265,15 @@ src/Be.Cars.Blazor/Logs/*
 
 # Use abp install-libs to restore.
 **/wwwroot/libs/*
+
+# IdentityServer temp files
+tempkey.rsa
+tempkey.jwk
+# Ignore all .secrets.json files, i.e. ABP license files, etc.
+**/*.secrets.json
+
+test/Be.Cars.HttpApi.Client.ConsoleTestApp/appsettings.secrets.json
+test/Be.Cars.HttpApi.Client.ConsoleTestApp/appsettings.secrets.json
+src/Be.Cars.Blazor/appsettings.secrets.json
+src/Be.Cars.AuthServer/appsettings.secrets.json
+src/Be.Cars.HttpApi.Host/appsettings.secrets.json

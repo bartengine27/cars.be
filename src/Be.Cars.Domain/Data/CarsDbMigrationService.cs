@@ -11,7 +11,7 @@ using Volo.Abp.Data;
 using Volo.Abp.DependencyInjection;
 using Volo.Abp.Identity;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp.TenantManagement;
+using Volo.Saas.Tenants;
 
 namespace Be.Cars.Data;
 
@@ -26,14 +26,14 @@ public class CarsDbMigrationService : ITransientDependency
 
     public CarsDbMigrationService(
         IDataSeeder dataSeeder,
-        IEnumerable<ICarsDbSchemaMigrator> dbSchemaMigrators,
         ITenantRepository tenantRepository,
-        ICurrentTenant currentTenant)
+        ICurrentTenant currentTenant,
+        IEnumerable<ICarsDbSchemaMigrator> dbSchemaMigrators)
     {
         _dataSeeder = dataSeeder;
-        _dbSchemaMigrators = dbSchemaMigrators;
         _tenantRepository = tenantRepository;
         _currentTenant = currentTenant;
+        _dbSchemaMigrators = dbSchemaMigrators;
 
         Logger = NullLogger<CarsDbMigrationService>.Instance;
     }
@@ -101,8 +101,10 @@ public class CarsDbMigrationService : ITransientDependency
         Logger.LogInformation($"Executing {(tenant == null ? "host" : tenant.Name + " tenant")} database seed...");
 
         await _dataSeeder.SeedAsync(new DataSeedContext(tenant?.Id)
-            .WithProperty(IdentityDataSeedContributor.AdminEmailPropertyName, IdentityDataSeedContributor.AdminEmailDefaultValue)
-            .WithProperty(IdentityDataSeedContributor.AdminPasswordPropertyName, IdentityDataSeedContributor.AdminPasswordDefaultValue)
+            .WithProperty(IdentityDataSeedContributor.AdminEmailPropertyName,
+                CarsConsts.AdminEmailDefaultValue)
+            .WithProperty(IdentityDataSeedContributor.AdminPasswordPropertyName,
+                CarsConsts.AdminPasswordDefaultValue)
         );
     }
 
@@ -149,6 +151,7 @@ public class CarsDbMigrationService : ITransientDependency
     private bool MigrationsFolderExists()
     {
         var dbMigrationsProjectFolder = GetEntityFrameworkCoreProjectFolderPath();
+
         return dbMigrationsProjectFolder != null && Directory.Exists(Path.Combine(dbMigrationsProjectFolder, "Migrations"));
     }
 

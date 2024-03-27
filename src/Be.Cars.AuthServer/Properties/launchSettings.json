@@ -1,10 +1,10 @@
 {
   "iisSettings": {
-    "windowsAuthentication": false, 
+    "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "https://localhost:44328",
-      "sslPort": 44328
+      "applicationUrl": "https://localhost:44339",
+      "sslPort": 44339
     }
   },
   "profiles": {
@@ -18,7 +18,7 @@
     "Be.Cars.AuthServer": {
       "commandName": "Project",
       "launchBrowser": true,
-      "applicationUrl": "https://localhost:44328",
+      "applicationUrl": "https://localhost:44339",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }

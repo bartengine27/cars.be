@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
@@ -9,11 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Be.Cars.EntityFrameworkCore.Tests\Be.Cars.EntityFrameworkCore.Tests.csproj" />
+    <ProjectReference Include="..\..\src\Be.Cars.Domain\Be.Cars.Domain.csproj" />
+    <ProjectReference Include="..\Be.Cars.TestBase\Be.Cars.TestBase.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
   </ItemGroup>
 
 </Project>

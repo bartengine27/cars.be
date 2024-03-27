@@ -9,15 +9,16 @@ using Volo.Abp.EntityFrameworkCore.Sqlite;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement;
+using Volo.Abp.TextTemplateManagement;
 using Volo.Abp.Uow;
 
 namespace Be.Cars.EntityFrameworkCore;
 
 [DependsOn(
+    typeof(CarsApplicationTestModule),
     typeof(CarsEntityFrameworkCoreModule),
-    typeof(CarsTestBaseModule),
     typeof(AbpEntityFrameworkCoreSqliteModule)
-    )]
+)]
 public class CarsEntityFrameworkCoreTestModule : AbpModule
 {
     private SqliteConnection? _sqliteConnection;
@@ -34,9 +35,15 @@ public class CarsEntityFrameworkCoreTestModule : AbpModule
             options.SaveStaticPermissionsToDatabase = false;
             options.IsDynamicPermissionStoreEnabled = false;
         });
+        Configure<TextTemplateManagementOptions>(options =>
+        {
+            options.SaveStaticTemplatesToDatabase = false;
+            options.IsDynamicTemplateStoreEnabled = false;
+        });
         context.Services.AddAlwaysDisableUnitOfWorkTransaction();
 
         ConfigureInMemorySqlite(context.Services);
+
     }
 
     private void ConfigureInMemorySqlite(IServiceCollection services)

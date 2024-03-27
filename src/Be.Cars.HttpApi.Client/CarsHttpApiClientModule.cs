@@ -1,26 +1,34 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Volo.Abp.Account;
+using Volo.Abp.AuditLogging;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
+using Volo.Abp.OpenIddict;
+using Volo.Abp.LanguageManagement;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement;
-using Volo.Abp.TenantManagement;
+using Volo.Abp.TextTemplateManagement;
 using Volo.Abp.SettingManagement;
+using Volo.Saas.Host;
 using Volo.Abp.VirtualFileSystem;
-using Volo.Abp.Http.Client;
-using System.Net.Http;
-using Microsoft.Extensions.Hosting;
+using Volo.Abp.Gdpr;
 
 namespace Be.Cars;
 
 [DependsOn(
     typeof(CarsApplicationContractsModule),
-    typeof(AbpAccountHttpApiClientModule),
     typeof(AbpIdentityHttpApiClientModule),
     typeof(AbpPermissionManagementHttpApiClientModule),
-    typeof(AbpTenantManagementHttpApiClientModule),
     typeof(AbpFeatureManagementHttpApiClientModule),
-    typeof(AbpSettingManagementHttpApiClientModule)
+    typeof(AbpSettingManagementHttpApiClientModule),
+    typeof(SaasHostHttpApiClientModule),
+    typeof(AbpAuditLoggingHttpApiClientModule),
+    typeof(AbpOpenIddictProHttpApiClientModule),
+    typeof(AbpAccountAdminHttpApiClientModule),
+    typeof(AbpAccountPublicHttpApiClientModule),
+    typeof(LanguageManagementHttpApiClientModule),
+    typeof(AbpGdprHttpApiClientModule),
+    typeof(TextTemplateManagementHttpApiClientModule)
 )]
 public class CarsHttpApiClientModule : AbpModule
 {
@@ -28,21 +36,6 @@ public class CarsHttpApiClientModule : AbpModule
 
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
-        if (context.Services.GetHostingEnvironment().IsDevelopment())
-        {
-            context.Services.PreConfigure<AbpHttpClientBuilderOptions>(options =>
-            {
-                options.ProxyClientBuildActions.Add((s, b) =>
-                {
-                    b.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-                    {
-                        //ClientCertificateOptions = ClientCertificateOption.Manual,
-                        ServerCertificateCustomValidationCallback = (x, x1, x2, x3) => true,
-                    });
-                });
-            });
-        }
-        //https://github.com/abpframework/abp/blob/dev/docs/en/API/Dynamic-CSharp-API-Clients.md
         context.Services.AddHttpClientProxies(
             typeof(CarsApplicationContractsModule).Assembly,
             RemoteServiceName

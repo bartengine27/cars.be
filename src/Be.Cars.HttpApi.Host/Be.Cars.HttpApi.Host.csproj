@@ -5,40 +5,40 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
+    <AspNetCoreHostingModel>InProcess</AspNetCoreHostingModel>
     <RootNamespace>Be.Cars</RootNamespace>
     <PreserveCompilationReferences>true</PreserveCompilationReferences>
-    <UserSecretsId>Be.Cars-4681b4fd-151f-4221-84a4-929d86723e4c</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="8.0.2" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="8.0.2" />
+    <PackageReference Include="AspNetCore.HealthChecks.UI" Version="8.0.0" />
+    <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.0" />
+    <PackageReference Include="AspNetCore.HealthChecks.UI.InMemory.Storage" Version="8.0.0" />
     <PackageReference Include="OpenTelemetry.Exporter.Console" Version="1.7.0" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.7.0" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" Version="1.7.0" />
     <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.7.1" />
-    <PackageReference Include="Serilog.AspNetCore" Version="5.0.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.0" />
     <PackageReference Include="Serilog.Sinks.Async" Version="1.5.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.2" />
-    <PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="8.0.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.DataProtection.StackExchangeRedis" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.MicrosoftAccount" Version="8.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Twitter" Version="8.0.0" />
     <PackageReference Include="DistributedLock.Redis" Version="1.0.2" />
     <PackageReference Include="Serilog.Sinks.OpenTelemetry" Version="1.2.0" />
     <PackageReference Include="SharpAbp.Abp.OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="3.1.7" />
-    <PackageReference Include="Volo.Abp.AspNetCore.Authentication.OpenIdConnect" Version="8.0.3" />
-    <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy" Version="8.0.3" />
-    <PackageReference Include="Volo.Abp.Autofac" Version="8.0.3" />
-    <PackageReference Include="Volo.Abp.Caching.StackExchangeRedis" Version="8.0.3" />
-    <PackageReference Include="Volo.Abp.DistributedLocking" Version="8.0.3" />
-    <PackageReference Include="Volo.Abp.AspNetCore.Serilog" Version="8.0.3" />
-    <PackageReference Include="Volo.Abp.Swashbuckle" Version="8.0.3" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Volo.Abp.AspNetCore.Mvc.UI.MultiTenancy" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.Autofac" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.AspNetCore.Serilog" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.Identity.AspNetCore" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.Caching.StackExchangeRedis" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.DistributedLocking" Version="8.0.5" />
+    <PackageReference Include="Volo.Abp.Swashbuckle" Version="8.0.5" />
     <ProjectReference Include="..\Be.Cars.Application\Be.Cars.Application.csproj" />
     <ProjectReference Include="..\Be.Cars.EntityFrameworkCore\Be.Cars.EntityFrameworkCore.csproj" />
     <ProjectReference Include="..\Be.Cars.HttpApi\Be.Cars.HttpApi.csproj" />

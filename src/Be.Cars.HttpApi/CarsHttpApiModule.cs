@@ -1,24 +1,34 @@
 ﻿using Localization.Resources.AbpUi;
 using Be.Cars.Localization;
 using Volo.Abp.Account;
+using Volo.Abp.AuditLogging;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
-using Volo.Abp.Localization;
+using Volo.Abp.LanguageManagement;
 using Volo.Abp.Modularity;
 using Volo.Abp.PermissionManagement.HttpApi;
+using Volo.Saas.Host;
+using Volo.Abp.Localization;
 using Volo.Abp.SettingManagement;
-using Volo.Abp.TenantManagement;
+using Volo.Abp.TextTemplateManagement;
+using Volo.Abp.Gdpr;
+using Volo.Abp.OpenIddict;
 
 namespace Be.Cars;
 
-[DependsOn(
+ [DependsOn(
     typeof(CarsApplicationContractsModule),
-    typeof(AbpAccountHttpApiModule),
     typeof(AbpIdentityHttpApiModule),
     typeof(AbpPermissionManagementHttpApiModule),
-    typeof(AbpTenantManagementHttpApiModule),
     typeof(AbpFeatureManagementHttpApiModule),
-    typeof(AbpSettingManagementHttpApiModule)
+    typeof(AbpSettingManagementHttpApiModule),
+    typeof(AbpAuditLoggingHttpApiModule),
+    typeof(AbpOpenIddictProHttpApiModule),
+    typeof(AbpAccountAdminHttpApiModule),
+    typeof(LanguageManagementHttpApiModule),
+    typeof(SaasHostHttpApiModule),
+    typeof(AbpGdprHttpApiModule),
+    typeof(TextTemplateManagementHttpApiModule)
     )]
 public class CarsHttpApiModule : AbpModule
 {

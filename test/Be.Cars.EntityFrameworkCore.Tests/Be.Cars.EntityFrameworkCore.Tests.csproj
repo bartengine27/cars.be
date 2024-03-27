@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\..\common.props" />
 
@@ -10,12 +10,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Be.Cars.EntityFrameworkCore\Be.Cars.EntityFrameworkCore.csproj" />
-    <ProjectReference Include="..\Be.Cars.TestBase\Be.Cars.TestBase.csproj" />
-    <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="8.0.3" />
+    <ProjectReference Include="..\Be.Cars.Application.Tests\Be.Cars.Application.Tests.csproj" />
+    <PackageReference Include="Volo.Abp.EntityFrameworkCore.Sqlite" Version="8.0.5" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.2.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
   </ItemGroup>
 
 </Project>

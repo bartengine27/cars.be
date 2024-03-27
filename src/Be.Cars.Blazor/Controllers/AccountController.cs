@@ -1,8 +1,8 @@
-﻿using Volo.Abp.AspNetCore.Mvc.Authentication;
+﻿using Volo.Abp.Account.Public.Web.Impersonation;
 
-namespace Be.Cars.Blazor.Controllers;
+namespace Be.Cars.Web.Controllers;
 
-public class AccountController : ChallengeAccountController
+public class AccountController : AbpAccountImpersonationChallengeAccountController
 {
 
 }

@@ -1,39 +1,57 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Be.Cars.Localization;
 using Be.Cars.MultiTenancy;
 using Volo.Abp.AuditLogging;
 using Volo.Abp.BackgroundJobs;
 using Volo.Abp.Emailing;
 using Volo.Abp.FeatureManagement;
 using Volo.Abp.Identity;
+using Volo.Abp.LanguageManagement;
 using Volo.Abp.Localization;
 using Volo.Abp.Modularity;
 using Volo.Abp.MultiTenancy;
-using Volo.Abp.OpenIddict;
 using Volo.Abp.PermissionManagement.Identity;
-using Volo.Abp.PermissionManagement.OpenIddict;
 using Volo.Abp.SettingManagement;
-using Volo.Abp.TenantManagement;
+using Volo.Abp.TextTemplateManagement;
+using Volo.Saas;
+using Volo.Abp.BlobStoring.Database;
+using Volo.Abp.Caching;
+using Volo.Abp.Commercial.SuiteTemplates;
+using Volo.Abp.Gdpr;
+using Volo.Abp.OpenIddict;
+using Volo.Abp.PermissionManagement.OpenIddict;
 
 namespace Be.Cars;
 
 [DependsOn(
     typeof(CarsDomainSharedModule),
     typeof(AbpAuditLoggingDomainModule),
+    typeof(AbpCachingModule),
     typeof(AbpBackgroundJobsDomainModule),
     typeof(AbpFeatureManagementDomainModule),
-    typeof(AbpIdentityDomainModule),
-    typeof(AbpOpenIddictDomainModule),
-    typeof(AbpPermissionManagementDomainOpenIddictModule),
+    typeof(AbpIdentityProDomainModule),
     typeof(AbpPermissionManagementDomainIdentityModule),
+    typeof(AbpOpenIddictProDomainModule),
+    typeof(AbpPermissionManagementDomainOpenIddictModule),
     typeof(AbpSettingManagementDomainModule),
-    typeof(AbpTenantManagementDomainModule),
-    typeof(AbpEmailingModule)
-)]
+    typeof(SaasDomainModule),
+    typeof(TextTemplateManagementDomainModule),
+    typeof(LanguageManagementDomainModule),
+    typeof(VoloAbpCommercialSuiteTemplatesModule),
+    typeof(AbpEmailingModule),
+    typeof(AbpGdprDomainModule),
+    typeof(BlobStoringDatabaseDomainModule)
+    )]
 public class CarsDomainModule : AbpModule
 {
     public override void ConfigureServices(ServiceConfigurationContext context)
     {
+        Configure<AbpMultiTenancyOptions>(options =>
+        {
+            options.IsEnabled = MultiTenancyConsts.IsEnabled;
+        });
+
         Configure<AbpLocalizationOptions>(options =>
         {
             options.Languages.Add(new LanguageInfo("ar", "ar", "العربية", "ae"));
@@ -41,7 +59,6 @@ public class CarsDomainModule : AbpModule
             options.Languages.Add(new LanguageInfo("en", "en", "English", "gb"));
             options.Languages.Add(new LanguageInfo("en-GB", "en-GB", "English (UK)"));
             options.Languages.Add(new LanguageInfo("hu", "hu", "Magyar"));
-            options.Languages.Add(new LanguageInfo("hr", "hr", "Croatian"));
             options.Languages.Add(new LanguageInfo("fi", "fi", "Finnish", "fi"));
             options.Languages.Add(new LanguageInfo("fr", "fr", "Français", "fr"));
             options.Languages.Add(new LanguageInfo("hi", "hi", "Hindi", "in"));
@@ -56,10 +73,6 @@ public class CarsDomainModule : AbpModule
             options.Languages.Add(new LanguageInfo("es", "es", "Español"));
         });
 
-        Configure<AbpMultiTenancyOptions>(options =>
-        {
-            options.IsEnabled = MultiTenancyConsts.IsEnabled;
-        });
 
 #if DEBUG
         context.Services.Replace(ServiceDescriptor.Singleton<IEmailSender, NullEmailSender>());

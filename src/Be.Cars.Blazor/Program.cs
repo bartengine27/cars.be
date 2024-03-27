@@ -1,13 +1,11 @@
+using System;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Server.Kestrel;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry.Metrics;
 using Serilog;
 using Serilog.Events;
-using System;
-using System.Threading.Tasks;
 
 namespace Be.Cars.Blazor;
 
@@ -31,18 +29,20 @@ public class Program
         try
         {
             Log.Information("Starting web host.");
-            var builder = WebApplication.CreateBuilder(args);            
-            builder.Host.AddAppSettingsSecretsJson()
+            var builder = WebApplication.CreateBuilder(args);
+            builder.Host
+                .AddAppSettingsSecretsJson()
                 .UseAutofac()
                 .UseSerilog();
             await builder.AddApplicationAsync<CarsBlazorModule>();
+
             //add telemetry
             //https://community.abp.io/posts/asp.net-core-metrics-with-.net-8.0-1xnw1apc
             //https://learn.microsoft.com/en-us/aspnet/core/log-mon/metrics/metrics?view=aspnetcore-8.0
             //https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/src/OpenTelemetry.Exporter.Prometheus.AspNetCore/README.md
             builder.Services.AddOpenTelemetry()
                 .WithMetrics(builder =>
-                {                    
+                {
                     builder.AddAspNetCoreInstrumentation();
                     //.net8 only https://github.com/open-telemetry/opentelemetry-dotnet/pull/4934
                     builder.AddMeter("Microsoft.AspNetCore.Hosting");
@@ -58,10 +58,8 @@ public class Program
                     builder.AddPrometheusExporter();
                     builder.AddConsoleExporter();
                 });
-            var app = builder.Build();            
-            //app.UseOpenTelemetryPrometheusScrapingEndpoint(
-            //    context => context.Request.Path == builder.Configuration["ApplicationInsights:Path"]
-            //    /*&& context.Connection.LocalPort == 5001*/);
+
+            var app = builder.Build();
             app.MapPrometheusScrapingEndpoint();
             await app.InitializeApplicationAsync();
             await app.RunAsync();
