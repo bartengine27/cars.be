@@ -70,6 +70,7 @@ public class CarsAuthServerModule : AbpModule
                     serverBuilder.AddProductionEncryptionAndSigningCertificate("openiddict.pfx", "00000000-0000-0000-0000-000000000000");
                 });
             }
+            //TODO client credentials flow
             builder.AddServer(options =>
             {
                 options.AllowClientCredentialsFlow();

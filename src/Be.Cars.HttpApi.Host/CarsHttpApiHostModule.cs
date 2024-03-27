@@ -108,7 +108,7 @@ public class CarsHttpApiHostModule : AbpModule
     {
         context.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddAbpOpenIdConnect("oidc", options =>
-            {
+            {                
                 options.Authority = configuration["AuthServer:Authority"];
                 options.RequireHttpsMetadata = Convert.ToBoolean(configuration["AuthServer:RequireHttpsMetadata"]);
                 options.ResponseType = OpenIdConnectResponseType.CodeIdToken;
