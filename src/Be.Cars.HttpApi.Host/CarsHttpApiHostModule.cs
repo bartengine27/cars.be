@@ -169,7 +169,7 @@ public class CarsHttpApiHostModule : AbpModule
         IWebHostEnvironment hostingEnvironment)
     {
         var dataProtectionBuilder = context.Services.AddDataProtection().SetApplicationName("Cars");
-        if (!hostingEnvironment.IsDevelopment())
+        //if (!hostingEnvironment.IsDevelopment())
         {
             var redis = ConnectionMultiplexer.Connect(configuration["Redis:Configuration"]!);
             dataProtectionBuilder.PersistKeysToStackExchangeRedis(redis, "Cars-Protection-Keys");

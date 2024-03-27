@@ -39,6 +39,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Be.Cars.DbMigrator", "src\B
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Be.Cars.Blazor", "src\Be.Cars.Blazor\Be.Cars.Blazor.csproj", "{EC53CB98-6B39-464C-8954-F109848E715D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "README", "README", "{1030296A-C290-45B8-A574-A68C81BB58D4}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
