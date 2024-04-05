@@ -1,14 +1,36 @@
 # Be.Cars
 
+## Contents
+
+- [Be.Cars](#becars)
+  - [Contents](#contents)
+  - [About this solution](#about-this-solution)
+    - [Pre-requirements](#pre-requirements)
+    - [Authentication Server](#authentication-server)
+      - [Client credentials flow](#client-credentials-flow)
+    - [Cross-Site Request Forgery (CSRF) Protection](#cross-site-request-forgery-csrf-protection)
+      - [Cross-Site Request Forgery (CSRF)](#cross-site-request-forgery-csrf)
+      - [REDIS to Store Protection Keys in a Distributed Architecture](#redis-to-store-protection-keys-in-a-distributed-architecture)
+    - [OpenTelemetry](#opentelemetry)
+    - [Configurations](#configurations)
+    - [Before running the application](#before-running-the-application)
+      - [Generating a Signing Certificate](#generating-a-signing-certificate)
+      - [Install Client-Side Libraries](#install-client-side-libraries)
+      - [Create the Database](#create-the-database)
+    - [Running the application](#running-the-application)
+    - [Solution structure](#solution-structure)
+  - [Deploying the application](#deploying-the-application)
+    - [Additional resources](#additional-resources)
+
 ## About this solution
 
 This is a layered startup solution based on [Domain Driven Design (DDD)](https://docs.abp.io/en/abp/latest/Domain-Driven-Design) practises. All the fundamental ABP modules are already installed. Check the [Application Startup Template](https://docs.abp.io/en/commercial/latest/startup-templates/application/index) documentation for more info.
 
 ### Pre-requirements
 
-* [.NET 8.0+ SDK](https://dotnet.microsoft.com/download/dotnet)
-* [Node v18 or 20](https://nodejs.org/en)
-* [Redis](https://redis.io/)
+- [.NET 8.0+ SDK](https://dotnet.microsoft.com/download/dotnet)
+- [Node v18 or 20](https://nodejs.org/en)
+- [Redis](https://redis.io/)
 
 ### Authentication Server
 
@@ -17,7 +39,7 @@ the [ABP](https://abp.io/) default.
 
 `OpenIddict` serves as a versatile open-source framework for implementing `OpenID Connect` and `OAuth 2.0` in .NET or .NET Core applications. Its design is aimed at simplifying 
 the complex processes involved in authentication and authorization, providing developers with a robust, extensible, and compliant solution. When integrated into 
-the ABP.io framework — a modern web development platform that leverages the ASP.NET Core framework — OpenIddict not only enhances the security of applications 
+the ABP.io framework ï¿½ a modern web development platform that leverages the ASP.NET Core framework ï¿½ OpenIddict not only enhances the security of applications 
 but also ensures a streamlined implementation of industry-standard protocols for authenticating users and securing APIs.
 
 For developers, the importance of secure, reliable, and scalable authentication mechanisms cannot be overstated. In today's 
@@ -52,9 +74,9 @@ the `Be.Cars.AuthServer` and `Be.Cars.Domain` project.
 First, ensure that your ABP.io project is set up and running: you can create a new ABP.io project using the ABP CLI, [see](https://abp.io/get-started). After successfully 
 creating the project, you can proceed with the following steps to configure OpenIddict for the Client Credentials flow:
 
-* Configure the OpenIddict Server in the `Be.Cars.AuthServer` project:
+- Configure the OpenIddict Server in the `Be.Cars.AuthServer` project:
 
-  Enable the Client Credentials flow in the `Be.Cars.AuthServer` project by adding the following code to the `PreConfigureServices` method in the `CarsAuthServerModule.cs` file:
+  Enable the Client Credentials flow in the `Be.Cars.AuthServer` project by adding the following code to the `PreConfigureServices` method in the 'Be.Cars.AuthServer.CarsAuthServerModule.cs` file:
 
 ```csharp
     public override void PreConfigureServices(ServiceConfigurationContext context)
@@ -73,7 +95,9 @@ creating the project, you can proceed with the following steps to configure Open
                 .AllowAuthorizationCodeFlow()
                 .AllowRefreshTokenFlow()
                 .AllowClientCredentialsFlow()
-                .AddSigningCertificate(new X509Certificate2("openiddict.pfx", "d7fdd187-b031-48b1-bf66-2a89d8180917"));
+                // Note the password here and the password in the second part of the PreConfigureServices function call,
+                // both have to be equal.
+                .AddSigningCertificate(new X509Certificate2("openiddict.pfx", "d7fdd187-b031-48b1-bf66-2a89d8180917")); 
                 //.DisableAccessTokenEncryption();
             });
             // Registers the OpenIddict token validation services in the DI container.
@@ -86,89 +110,89 @@ creating the project, you can proceed with the following steps to configure Open
         });
 ```
 
-* Configure the Authentication Middleware (enabled by default in all relevant projects, i.e. `Be.Cars.AuthServer`, `Be.Cars.Blazor` and `Be.Cars.HttpApi.Host`)
-* Configure the OpenIddict Server database in the `Be.Cars.Domain` project:
+- Configure the Authentication Middleware (enabled by default in all relevant projects, i.e. `Be.Cars.AuthServer`, `Be.Cars.Blazor` and `Be.Cars.HttpApi.Host`)
+- Configure the OpenIddict Server database in the `Be.Cars.Domain` project:
 
   With the server set up, you now need to register a client that will communicate with the API using the Client Credentials flow. This typically involves adding an 
   entry to table `[Cars].[dbo].[OpenIddictApplications]` in our ABP.io database. For a client credential flow, you will have to set up a client ID and a secret by 
   adding the following code in class `OpenIddictDataSeedContributor` in the `Be.Cars.Domain` project:
 
-```csharp
-        // Swagger Client
-        var swaggerClientId = configurationSection["Cars_Swagger:ClientId"];
-        if (!swaggerClientId.IsNullOrWhiteSpace())
-        {
-            var swaggerRootUrl = configurationSection["Cars_Swagger:RootUrl"]?.TrimEnd('/');
+  ```csharp
+          // Swagger Client
+          var swaggerClientId = configurationSection["Cars_Swagger:ClientId"];
+          if (!swaggerClientId.IsNullOrWhiteSpace())
+          {
+              var swaggerRootUrl = configurationSection["Cars_Swagger:RootUrl"]?.TrimEnd('/');
 
-            await CreateApplicationAsync(
-                name: swaggerClientId!,
-                //type: OpenIddictConstants.ClientTypes.Public,
-                type: OpenIddictConstants.ClientTypes.Confidential,
-                consentType: OpenIddictConstants.ConsentTypes.Implicit,
-                displayName: "Swagger Application",
-                secret: configurationSection["Cars_BlazorServerTiered:ClientSecret"] ?? "1q2w3e*",
-                grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, OpenIddictConstants.GrantTypes.ClientCredentials, },
-                scopes: commonScopes,
-                redirectUri: $"{swaggerRootUrl}/swagger/oauth2-redirect.html",
-                clientUri: swaggerRootUrl,
-                logoUri: "/images/clients/swagger.svg"
-            );
-        }
-```
+              await CreateApplicationAsync(
+                  name: swaggerClientId!,
+                  //type: OpenIddictConstants.ClientTypes.Public,
+                  type: OpenIddictConstants.ClientTypes.Confidential,
+                  consentType: OpenIddictConstants.ConsentTypes.Implicit,
+                  displayName: "Swagger Application",
+                  secret: configurationSection["Cars_BlazorServerTiered:ClientSecret"] ?? "1q2w3e*",
+                  grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, OpenIddictConstants.GrantTypes.ClientCredentials, },
+                  scopes: commonScopes,
+                  redirectUri: $"{swaggerRootUrl}/swagger/oauth2-redirect.html",
+                  clientUri: swaggerRootUrl,
+                  logoUri: "/images/clients/swagger.svg" //this parameter is missing
+              );
+          }
+  ```
 
   In the code snippet above, the `CreateApplicationAsync` method is used to create a new client application with the specified parameters. The `type` parameter
   is set to `OpenIddictConstants.ClientTypes.Confidential` to indicate that the client is a confidential application. A confidential (OpenIddict) client:
 
-  * Can Securely Store Secrets: 
+  - Can Securely Store Secrets:
 
     Confidential clients are capable of securely storing a client secret. This is typically because they run in an environment where unauthorized access 
     to the client secret can be effectively restricted. Examples include server-side applications, where the secret is stored on the server.
 
-  * Client Authentication: 
+  - Client Authentication:
   
     Due to their ability to securely store secrets, confidential clients authenticate to the authorization server using the client secret 
     (or other means like client assertions). This is used not only for the client credentials grant but also for other flows where client 
     authentication is required, such as the authorization code flow with a secret.
 
-  * Use Cases: 
+  - Use Cases: 
   
     Server-side web applications, backend services, and applications running on secure, trusted servers are considered confidential clients.
 
   Public clients, on the other hand,
 
-  * Cannot Securely Store Secrets: 
+  - Cannot Securely Store Secrets:
 
     Public clients run in environments where the confidentiality of information (like a client secret) cannot be guaranteed. 
     This typically includes clients running on the user's device, such as native mobile apps, desktop applications, and single-page web applications (SPAs).
 
-  * Client Authentication: 
+  - Client Authentication:
   
     Because public clients cannot securely hold secrets, they do not authenticate to the authorization server using a client secret. Instead, public clients rely on other means for authorization flows, like using the "Proof Key for Code Exchange" (PKCE) enhancement with the authorization code flow for SPAs and mobile apps.
   
-  * Use Cases: 
+  - Use Cases:
   
     Mobile applications, desktop applications, and JavaScript web applications running in the browser are examples of public clients.
 
   The OAuth 2.0 and OpenID Connect specifications make this distinction to ensure that different types of clients use the most appropriate 
   and secure method for their environment:
 
-  * Security: 
+  - Security:
   
     It prevents exposing secrets in environments where they cannot be protected effectively. This is crucial for maintaining the security integrity of the OAuth/OIDC ecosystem.
 
-  * Adaptability: 
+  - Adaptability:
   
     It allows the OAuth/OIDC framework to adapt to a wide range of application types and deployment scenarios by providing appropriate mechanisms for each type of client.
 
   In practice, when you encounter the requirement that "The 'client_secret' or 'client_assertion' parameter must be specified when using the client credentials grant,
   it implies that the authorization server (OpenIddict) expects the client to authenticate itself as a confidential client.
 
-  * For a public client:
+  - For a public client:
   
-    You wouldn’t normally use the client credentials flow because it requires a client secret for authentication. Public clients typically use flows designed for 
+    You wouldnï¿½t normally use the client credentials flow because it requires a client secret for authentication. Public clients typically use flows designed for 
     environments where secrets cannot be securely stored, such as the authorization code flow with PKCE.
 
-  * For a confidential client:
+  - For a confidential client:
 
     You must include the client_secret in requests to the token endpoint when using the client credentials grant (or other flows where client authentication is necessary), 
     as the server expects a form of client authentication that relies on the ability to securely store this secret.
@@ -262,49 +286,26 @@ you may encounter the following error:
 }
 ```
 
-As the error message suggests, the anti-forgery cookie token and form field token do not match. 
-This is because the client is sending the request to a different node. Therefore, as in the drawing above,
-use REDIS to store the data protection keys, i.e. share state between the different REST API nodes.
+As the error message suggests, the anti-forgery cookie token and form field token do not match. This is because the client is sending the request to a different node. Therefore, as in the drawing above, use REDIS to store the data protection keys, i.e. share state between the different REST API nodes.
 
 #### Cross-Site Request Forgery (CSRF)
 
-Cross-Site Request Forgery (CSRF) is a type of security threat where an attacker tricks 
-a user into executing unwanted actions on a web application in which they're authenticated. 
-If the victim is a regular user, a successful CSRF attack can force them to perform state-changing 
-requests like transferring funds, changing their email address, and so forth. If the victim has an 
-administrative account, CSRF can compromise the entire web application. CSRF exploits the trust that a 
-site has in the user's browser, and unlike Cross-Site Scripting (XSS), which exploits the trust a user 
-has in a particular site, CSRF exploits the trust that a site has in the user's browser.
+Cross-Site Request Forgery (CSRF) is a type of security threat where an attacker tricks a user into executing unwanted actions on a web application in which they're authenticated. If the victim is a regular user, a successful CSRF attack can force them to perform state-changing requests like transferring funds, changing their email address, and so forth. If the victim has an administrative account, CSRF can compromise the entire web application. CSRF exploits the trust that a site has in the user's browser, and unlike Cross-Site Scripting (XSS), which exploits the trust a user has in a particular site, CSRF exploits the trust that a site has in the user's browser.
 
 #### REDIS to Store Protection Keys in a Distributed Architecture
 
-In a distributed web application architecture, particularly one that scales horizontally, requests from the 
-same user can be routed to different servers across multiple requests due to load balancing. This poses a 
-challenge for CSRF protection mechanisms that rely on keeping track of state, such as synchronizer tokens 
-or double submit cookies, because the server handling a subsequent request might not have access to the 
-tokens generated by another server on a previous request.
+In a distributed web application architecture, particularly one that scales horizontally, requests from the same user can be routed to different servers across multiple requests due to load balancing. This poses a challenge for CSRF protection mechanisms that rely on keeping track of state, such as synchronizer tokens 
+or double submit cookies, because the server handling a subsequent request might not have access to the tokens generated by another server on a previous request.
 
-REDIS a fast in-memory data store that supports high availability and data persistence, offers an 
-out of the box solution for storing CSRF protection keys in a distributed setup:
+REDIS a fast in-memory data store that supports high availability and data persistence, offers an out of the box solution for storing CSRF protection keys in a distributed setup:
 
-* Centralized Token Store: REDIS can act as a centralized store for CSRF tokens, making them accessible 
-across all servers in the distributed environment. This ensures that any server can validate the CSRF token 
-included in a subsequent request, regardless of which server generated the token.
-* Performance: REDIS is designed for high performance, with operations typically completing in sub-millisecond times 
-minimizing the impact on the overall response time of web applications.
-* Scalability: As the web application grows, REDIS scales horizontally and vertically with minimal effort, 
-ensuring that the CSRF protection mechanism can support increased load without becoming a bottleneck.
-* Persistence and Reliability: REDIS offers various persistence options, ensuring that CSRF tokens and other 
-session data are not lost even in the event of a server restart or failure. This persistence 
-allows a more consistent user experience.
-* Simplicity and Ease of Integration: Integrating REDIS as a session store or for CSRF token storage is 
-straightforward with ABP.io. This ease of integration, combined with its wide support and robust client libraries, 
-makes REDIS an almost obvious choice for our particular setup.
+- Centralized Token Store: REDIS can act as a centralized store for CSRF tokens, making them accessible across all servers in the distributed environment. This ensures that any server can validate the CSRF token included in a subsequent request, regardless of which server generated the token.
+- Performance: REDIS is designed for high performance, with operations typically completing in sub-millisecond times minimizing the impact on the overall response time of web applications.
+- Scalability: As the web application grows, REDIS scales horizontally and vertically with minimal effort, ensuring that the CSRF protection mechanism can support increased load without becoming a bottleneck.
+- Persistence and Reliability: REDIS offers various persistence options, ensuring that CSRF tokens and other session data are not lost even in the event of a server restart or failure. This persistence allows a more consistent user experience.
+- Simplicity and Ease of Integration: Integrating REDIS as a session store or for CSRF token storage is straightforward with ABP.io. This ease of integration, combined with its wide support and robust client libraries, makes REDIS an almost obvious choice for our particular setup.
 
-Using REDIS to store CSRF protection keys allows distributed web applications to maintain a high level of 
-security against CSRF attacks while also ensuring scalability, performance, and reliability. This approach 
-effectively addresses the challenges posed by the stateless nature of HTTP and the distributed architecture 
-of modern web applications, providing a secure, user-friendly experience.
+Using REDIS to store CSRF protection keys allows distributed web applications to maintain a high level of security against CSRF attacks while also ensuring scalability, performance, and reliability. This approach effectively addresses the challenges posed by the stateless nature of HTTP and the distributed architecture of modern web applications, providing a secure, user-friendly experience.
 
 As mentioned earlier, the ABP.io framework provides built-in support for REDIS as a session store, making it very easy to enable REDIS as the storage mechanism for CSRF protection keys:
 
@@ -334,15 +335,222 @@ The `SetApplicationName` method is used to set the application name to "Cars". T
 if (!hostingEnvironment.IsDevelopment())
 ```
 
-check to ensure that the REDIS store is used in all environments. This is not only because the CSRF protection mechanism should be consistent 
-across all environments to ensure that the application is secure but also because `Proxmox` allows to easily setup several REST API nodes in 
-a distributed manner, i.e. a production-like environment, [see](https://github.com/bartengine27/hostr).
+check to ensure that the REDIS store is used in all environments. This is not only because the CSRF protection mechanism should be consistent across all environments to ensure that the application is secure but also because `Proxmox` allows to easily setup several REST API nodes in a distributed manner, i.e. a production-like environment, [see](https://github.com/bartengine27/hostr).
+
+:fire: On Windows you can replace [REDIS](https://redis.io/) with [MEMURAI](https://www.memurai.com/) or [Garnet](https://github.com/microsoft/garnet).  
+
+### OpenTelemetry
+
+OpenTelemetry is an open-source project that aims to provide a unified and vendor-agnostic instrumentation for collecting telemetry data (metrics, logs, and traces). OpenTelemetry helps enhancing the observability and operational efficiency of dotnet core applications, in particular ABP.io.
+
+OpenTelemetry facilitates detailed monitoring and tracing of .NET Core web applications, allowing developers and operations teams to gain insights into the application's performance and behavior. This is particularly crucial for microservices architectures, like those often developed using ABP.io, where the complexity of interactions between services can make diagnosing issues challenging. By integrating OpenTelemetry, teams can **trace requests as they flow through the application and its services**, identifying bottlenecks, dependencies, and issues with ease.
+
+The vendor-agnostic nature of OpenTelemetry means that it supports integration with a wide range of monitoring, logging, and tracing tools. This flexibility allows developers to choose the best tools for their specific needs without being locked into a single vendor. For ABP.io applications, which may leverage a variety of third-party services and databases, this means that developers can easily aggregate and correlate telemetry data across all components of the application ecosystem. As a result, teams can implement a comprehensive observability strategy that covers the entire stack, from front-end to back-end, regardless of the underlying technologies or platforms.
+
+As an example of the integration support offered by OpenTelemetry, Prometheus/Grafana and Telegraf/InfluxDB/... are combined with OpenTelemetry and ABP in [this example web site](https://github.com/bartengine27/hostr). Prometheus, with its efficient time-series data storage and powerful query language, excels at collecting and storing metrics at scale. It integrates with OpenTelemetry to ingest a wide range of telemetry data. This integration allows for detailed monitoring of application metrics, including request rates, error rates, and system resource usage, among others. Grafana, on the other hand, provides a versatile visualization layer that connects with Prometheus to create intuitive and interactive dashboards. These dashboards enable developers and operations teams to visually analyze the metrics, identify trends, and spot anomalies in real-time. The combination of Prometheus for metric collection, OpenTelemetry for comprehensive telemetry data gathering, and Grafana for data visualization creates a cohesive observability setup. The Telegraf/InfluxDB/... setup at [this example web site](https://github.com/bartengine27/hostr) is an extra alternative illustrating the integration support offered by OpenTelemetry.  
+
+You can add OpenTelemetry support in your `Be.Cars.HttpApi.Host` project by adding OpenTelemetry support in the `Program.cs` file (relevant lines are marked with `//add telemetry`):
+
+```csharp
+public class Program
+{
+    public async static Task<int> Main(string[] args)
+    {
+        var builder = WebApplication.CreateBuilder(args);
+        string otlpEndpoint = builder.Configuration.GetValue("Otlp:Endpoint", defaultValue: "http://localhost:4317");
+        Log.Logger = new LoggerConfiguration()
+#if DEBUG
+            .MinimumLevel.Debug()
+#else
+            .MinimumLevel.Information()
+#endif
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+            .Enrich.FromLogContext()
+            .WriteTo.Async(c => c.File("Logs/logs.txt"))
+            .WriteTo.Async(c => c.Console())
+            //add telemetry
+            .WriteTo.OpenTelemetry(otlpOptions =>
+            {
+                otlpOptions.Endpoint = otlpEndpoint;
+                otlpOptions.Protocol = Serilog.Sinks.OpenTelemetry.OtlpProtocol.Grpc;
+            }
+            )
+            .CreateLogger();
+
+        try
+        {
+            Log.Information("Starting Be.Cars.HttpApi.Host.");
+            //add forward headers middleware, see https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/proxy-load-balancer?view=aspnetcore-8.0
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders =
+                    ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+            });
+            builder.Host
+                .AddAppSettingsSecretsJson()
+                .UseAutofac()
+                .UseSerilog();
+            await builder.AddApplicationAsync<CarsHttpApiHostModule>();
+
+            //add telemetry
+            //https://community.abp.io/posts/asp.net-core-metrics-with-.net-8.0-1xnw1apc
+            //https://learn.microsoft.com/en-us/aspnet/core/log-mon/metrics/metrics?view=aspnetcore-8.0
+            //https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/src/OpenTelemetry.Exporter.Prometheus.AspNetCore/README.md
+            builder.Services.AddSingleton<CustomMetrics>();
+            builder.Services.AddOpenTelemetry()
+            .WithMetrics(builder =>
+            {
+                builder.AddAspNetCoreInstrumentation();
+                //.net8 only https://github.com/open-telemetry/opentelemetry-dotnet/pull/4934
+                builder.AddMeter("Microsoft.AspNetCore.Hosting");
+                //.net8 only https://github.com/open-telemetry/opentelemetry-dotnet/pull/4934
+                builder.AddMeter("Microsoft.AspNetCore.Server.Kestrel");
+                builder.AddMeter(CustomMetrics.Name);
+                builder.AddView("http.server.request.duration",
+                    new ExplicitBucketHistogramConfiguration
+                    {
+                        Boundaries = new double[] { 0, 0.005, 0.01, 0.025, 0.05,
+                    0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10 }
+                    });                
+                //TODO https://opentelemetry.io/docs/collector/
+                //builder.AddOtlpExporter();
+                builder.AddPrometheusExporter();
+                builder.AddConsoleExporter();
+            }
+            );
+
+            var app = builder.Build();
+            app.UseForwardedHeaders();
+            //add telemetry
+            app.MapPrometheusScrapingEndpoint();
+            await app.InitializeApplicationAsync();
+            await app.RunAsync();
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            if (ex is HostAbortedException)
+            {
+                throw;
+            }
+
+            Log.Fatal(ex, "Host terminated unexpectedly!");
+            return 1;
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
+    }
+}
+```
+
+Typical dependencies that you will need to install:
+
+- AspNetCore.HealthChecks.UI
+- AspNetCore.HealthChecks.UI.Client
+- Microsoft.EntityFrameworkCore.InMemory
+- AspNetCore.HealthChecks.UI.InMemory.Storage
+- OpenTelemetry.Exporter.Console
+- OpenTelemetry.Exporter.OpenTelemetryProtocol
+- OpenTelemetry.Extensions.Hosting
+- OpenTelemetry.Instrumentation.AspNetCore
+- Serilog.Sinks.OpenTelemetry
+- SharpAbp.Abp.OpenTelemetry.Exporter.Prometheus.AspNetCore
+
+and in a similar vein for `Be.Cars.Blazor` in `Program.cs`:
+
+```csharp
+public class Program
+{
+    public async static Task<int> Main(string[] args)
+    {
+        Log.Logger = new LoggerConfiguration()
+#if DEBUG
+            .MinimumLevel.Debug()
+#else
+            .MinimumLevel.Information()
+#endif
+            .MinimumLevel.Override("Microsoft", LogEventLevel.Information)
+            .MinimumLevel.Override("Microsoft.EntityFrameworkCore", LogEventLevel.Warning)
+            .Enrich.FromLogContext()
+            .WriteTo.Async(c => c.File("Logs/logs.txt"))
+            .WriteTo.Async(c => c.Console())
+            .CreateLogger();
+
+        try
+        {
+            Log.Information("Starting web host.");
+            var builder = WebApplication.CreateBuilder(args);
+            builder.Host
+                .AddAppSettingsSecretsJson()
+                .UseAutofac()
+                .UseSerilog();
+            await builder.AddApplicationAsync<CarsBlazorModule>();
+
+            //add telemetry
+            //https://community.abp.io/posts/asp.net-core-metrics-with-.net-8.0-1xnw1apc
+            //https://learn.microsoft.com/en-us/aspnet/core/log-mon/metrics/metrics?view=aspnetcore-8.0
+            //https://github.com/open-telemetry/opentelemetry-dotnet/blob/main/src/OpenTelemetry.Exporter.Prometheus.AspNetCore/README.md
+            builder.Services.AddOpenTelemetry()
+                .WithMetrics(builder =>
+                {
+                    builder.AddAspNetCoreInstrumentation();
+                    //.net8 only https://github.com/open-telemetry/opentelemetry-dotnet/pull/4934
+                    builder.AddMeter("Microsoft.AspNetCore.Hosting");
+                    //.net8 only https://github.com/open-telemetry/opentelemetry-dotnet/pull/4934
+                    builder.AddMeter("Microsoft.AspNetCore.Server.Kestrel");
+                    builder.AddView("http.server.request.duration",
+                        new ExplicitBucketHistogramConfiguration
+                        {
+                            Boundaries = new double[] { 0, 0.005, 0.01, 0.025, 0.05,
+                    0.075, 0.1, 0.25, 0.5, 0.75, 1, 2.5, 5, 7.5, 10 }
+                        });
+                    builder.AddPrometheusExporter();
+                    builder.AddConsoleExporter();
+                });
+
+            var app = builder.Build();
+            //add telemetry
+            app.MapPrometheusScrapingEndpoint();
+            await app.InitializeApplicationAsync();
+            await app.RunAsync();
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            if (ex is HostAbortedException)
+            {
+                throw;
+            }
+
+            Log.Fatal(ex, "Host terminated unexpectedly!");
+            return 1;
+        }
+        finally
+        {
+            Log.CloseAndFlush();
+        }
+    }
+}
+```
+
+:fire: The Blazor OpenTelemetry config is somewhat simplified comparted to the *REST endpoint*.  
 
 ### Configurations
 
 The solution comes with a default configuration that works out of the box. However, you may consider to change the following configuration before running your solution:
 
-* Check the `ConnectionStrings` in `appsettings.json` files under the `Be.Cars.AuthServer`, `Be.Cars.HttpApi.Host` and `Be.Cars.DbMigrator` projects and change it if you need.
+- Check the `ConnectionStrings` in `appsettings.json` files under the `Be.Cars.AuthServer`, `Be.Cars.HttpApi.Host` and `Be.Cars.DbMigrator` projects and change it if you need.
+
+  For example:
+  
+  ```json
+    "ConnectionStrings": {
+    "Default": "Server=your_machine_name;Database=Cars;Trusted_Connection=True;TrustServerCertificate=True"
+  }
+  ```
 
 ### Before running the application
 
@@ -378,14 +586,24 @@ abp install-libs
 
 Run `Be.Cars.DbMigrator` to create the initial database. This should be done in the first run. It is also needed if a new database migration is added to the solution later.
 
+### Running the application
+
+```bash
+# note the HTTPS endpoint, the authentication server refuses to run on HTTP
+set ASPNETCORE_URLS=https://*:5000/
+set ASPNETCORE_ENVIRONMENT=Development
+Be.Cars.AuthServer.exe
+#dotnet run --project .\src\Be.Cars.AuthServer\Be.Cars.AuthServer.csproj
+```
+
 ### Solution structure
 
 This is a layered monolith application that consists of the following applications:
 
-* `Be.Cars.DbMigrator`: A console application which applies the migrations and also seeds the initial data. It is useful on development as well as on production environment.
-* `Be.Cars.AuthServer`: ASP.NET Core MVC / Razor Pages application that is integrated OAuth 2.0(`OpenIddict`) and account modules. It is used to authenticate users and issue tokens.
-* `Be.Cars.HttpApi.Host`: ASP.NET Core API application that is used to expose the APIs to the clients.
-* `Be.Cars.Blazor`: ASP.NET Core Blazor Server application that is the essential web application of the solution.
+- `Be.Cars.DbMigrator`: A console application which applies the migrations and also seeds the initial data. It is useful on development as well as on production environment.
+- `Be.Cars.AuthServer`: ASP.NET Core MVC / Razor Pages application that is integrated OAuth 2.0(`OpenIddict`) and account modules. It is used to authenticate users and issue tokens.
+- `Be.Cars.HttpApi.Host`: ASP.NET Core API application that is used to expose the APIs to the clients.
+- `Be.Cars.Blazor`: ASP.NET Core Blazor Server application that is the essential web application of the solution.
 
 ## Deploying the application
 
@@ -395,7 +613,7 @@ Deploying an ABP application is not different than deploying any .NET or ASP.NET
 
 You can see the following resources to learn more about your solution and the ABP Framework:
 
-* [Web Application Development Tutorial](https://docs.abp.io/en/commercial/latest/tutorials/book-store/part-1)
-* [Application Startup Template](https://docs.abp.io/en/commercial/latest/startup-templates/application/index)
-* [LeptonX Theme Module](https://docs.abp.io/en/commercial/latest/themes/lepton-x/index)
-* [LeptonX Blazor UI](https://docs.abp.io/en/commercial/latest/themes/lepton-x/blazor?UI=BlazorServer)
+- [Web Application Development Tutorial](https://docs.abp.io/en/commercial/latest/tutorials/book-store/part-1)
+- [Application Startup Template](https://docs.abp.io/en/commercial/latest/startup-templates/application/index)
+- [LeptonX Theme Module](https://docs.abp.io/en/commercial/latest/themes/lepton-x/index)
+- [LeptonX Blazor UI](https://docs.abp.io/en/commercial/latest/themes/lepton-x/blazor?UI=BlazorServer)

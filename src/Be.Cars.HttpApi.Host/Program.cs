@@ -29,9 +29,9 @@ public class Program
             .Enrich.FromLogContext()
             .WriteTo.Async(c => c.File("Logs/logs.txt"))
             .WriteTo.Async(c => c.Console())
+            //add telemetry
             .WriteTo.OpenTelemetry(otlpOptions =>
             {
-                //otlpOptions.Endpoint = "http://127.0.0.1:4317/";
                 otlpOptions.Endpoint = otlpEndpoint;
                 otlpOptions.Protocol = Serilog.Sinks.OpenTelemetry.OtlpProtocol.Grpc;
             }
@@ -83,6 +83,7 @@ public class Program
 
             var app = builder.Build();
             app.UseForwardedHeaders();
+            //add telemetry
             app.MapPrometheusScrapingEndpoint();
             await app.InitializeApplicationAsync();
             await app.RunAsync();
