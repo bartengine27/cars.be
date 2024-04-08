@@ -123,7 +123,7 @@ public class OpenIddictDataSeedContributor : IDataSeedContributor, ITransientDep
                 type: OpenIddictConstants.ClientTypes.Confidential,
                 consentType: OpenIddictConstants.ConsentTypes.Implicit,
                 displayName: "Swagger Application",
-                secret: configurationSection["Cars_BlazorServerTiered:ClientSecret"] ?? "1q2w3e*",
+                secret: configurationSection["Cars_Swagger:ClientSecret"] ?? "1q2w3e*",
                 grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, OpenIddictConstants.GrantTypes.ClientCredentials, },
                 scopes: commonScopes,
                 redirectUri: $"{swaggerRootUrl}/swagger/oauth2-redirect.html",

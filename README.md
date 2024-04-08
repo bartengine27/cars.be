@@ -64,17 +64,16 @@ autheticating users is taken care off by default.
 
 #### Client credentials flow
 
-This section will guide .NET Core developers through the process of setting up OpenIddict within an ABP.io application to secure an API using the 
-Client Credentials flow. The Client Credentials grant is ideally suited for server-to-server communication, 
-where an application acts on its own behalf rather than on behalf of an individual user. 
+#### Configure the server
 
-Integrating OpenIddict with ABP.io to facilitate the Client Credentials flow involves a series of configuration steps and customizations within 
-the `Be.Cars.AuthServer` and `Be.Cars.Domain` project. 
+This section will describes the setup of OpenIddict within an ABP.io application to secure an API using the Client Credentials flow. The Client Credentials grant is ideally suited for server-to-server communication, where an application acts on its own behalf rather than on behalf of an individual user. 
+
+Integrating OpenIddict with ABP.io to facilitate the Client Credentials flow involves a series of configuration steps and customizations within the `Be.Cars.AuthServer` and `Be.Cars.Domain` project. 
 
 First, ensure that your ABP.io project is set up and running: you can create a new ABP.io project using the ABP CLI, [see](https://abp.io/get-started). After successfully 
 creating the project, you can proceed with the following steps to configure OpenIddict for the Client Credentials flow:
 
-- Configure the OpenIddict Server in the `Be.Cars.AuthServer` project:
+* Configure the OpenIddict Server in the `Be.Cars.AuthServer` project:
 
   Enable the Client Credentials flow in the `Be.Cars.AuthServer` project by adding the following code to the `PreConfigureServices` method in the 'Be.Cars.AuthServer.CarsAuthServerModule.cs` file:
 
@@ -110,89 +109,87 @@ creating the project, you can proceed with the following steps to configure Open
         });
 ```
 
-- Configure the Authentication Middleware (enabled by default in all relevant projects, i.e. `Be.Cars.AuthServer`, `Be.Cars.Blazor` and `Be.Cars.HttpApi.Host`)
-- Configure the OpenIddict Server database in the `Be.Cars.Domain` project:
+* Configure the Authentication Middleware (enabled by default in all relevant projects, i.e. `Be.Cars.AuthServer`, `Be.Cars.Blazor` and `Be.Cars.HttpApi.Host`)
+* Configure the OpenIddict Server database in the `Be.Cars.Domain` project:
 
   With the server set up, you now need to register a client that will communicate with the API using the Client Credentials flow. This typically involves adding an 
   entry to table `[Cars].[dbo].[OpenIddictApplications]` in our ABP.io database. For a client credential flow, you will have to set up a client ID and a secret by 
   adding the following code in class `OpenIddictDataSeedContributor` in the `Be.Cars.Domain` project:
 
-  ```csharp
-          // Swagger Client
-          var swaggerClientId = configurationSection["Cars_Swagger:ClientId"];
-          if (!swaggerClientId.IsNullOrWhiteSpace())
-          {
-              var swaggerRootUrl = configurationSection["Cars_Swagger:RootUrl"]?.TrimEnd('/');
+    ```csharp
+    // Swagger Client
+    var swaggerClientId = configurationSection["Cars_Swagger:ClientId"];
+    if (!swaggerClientId.IsNullOrWhiteSpace())
+    {
+        var swaggerRootUrl = configurationSection["Cars_Swagger:RootUrl"]?.TrimEnd('/');
 
-              await CreateApplicationAsync(
-                  name: swaggerClientId!,
-                  //type: OpenIddictConstants.ClientTypes.Public,
-                  type: OpenIddictConstants.ClientTypes.Confidential,
-                  consentType: OpenIddictConstants.ConsentTypes.Implicit,
-                  displayName: "Swagger Application",
-                  secret: configurationSection["Cars_BlazorServerTiered:ClientSecret"] ?? "1q2w3e*",
-                  grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, OpenIddictConstants.GrantTypes.ClientCredentials, },
-                  scopes: commonScopes,
-                  redirectUri: $"{swaggerRootUrl}/swagger/oauth2-redirect.html",
-                  clientUri: swaggerRootUrl,
-                  logoUri: "/images/clients/swagger.svg" //this parameter is missing
-              );
-          }
-  ```
+        await CreateApplicationAsync(
+            name: swaggerClientId!,
+            type: OpenIddictConstants.ClientTypes.Confidential,
+            consentType: OpenIddictConstants.ConsentTypes.Implicit,
+            displayName: "Swagger Application",
+            secret: configurationSection["Cars_Swagger:ClientSecret"] ?? "1q2w3e*",
+            grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, OpenIddictConstants.GrantTypes.ClientCredentials, },
+            scopes: commonScopes,
+            redirectUri: $"{swaggerRootUrl}/swagger/oauth2-redirect.html",
+            clientUri: swaggerRootUrl,
+        );
+    }
+    ```
 
   In the code snippet above, the `CreateApplicationAsync` method is used to create a new client application with the specified parameters. The `type` parameter
   is set to `OpenIddictConstants.ClientTypes.Confidential` to indicate that the client is a confidential application. A confidential (OpenIddict) client:
 
-  - Can Securely Store Secrets:
+  * Can Securely Store Secrets:
 
     Confidential clients are capable of securely storing a client secret. This is typically because they run in an environment where unauthorized access 
     to the client secret can be effectively restricted. Examples include server-side applications, where the secret is stored on the server.
 
-  - Client Authentication:
+  * Client Authentication:
   
     Due to their ability to securely store secrets, confidential clients authenticate to the authorization server using the client secret 
     (or other means like client assertions). This is used not only for the client credentials grant but also for other flows where client 
     authentication is required, such as the authorization code flow with a secret.
 
-  - Use Cases: 
+  * Use Cases: 
   
     Server-side web applications, backend services, and applications running on secure, trusted servers are considered confidential clients.
 
   Public clients, on the other hand,
 
-  - Cannot Securely Store Secrets:
+  * Cannot Securely Store Secrets:
 
     Public clients run in environments where the confidentiality of information (like a client secret) cannot be guaranteed. 
     This typically includes clients running on the user's device, such as native mobile apps, desktop applications, and single-page web applications (SPAs).
 
-  - Client Authentication:
+  * Client Authentication:
   
     Because public clients cannot securely hold secrets, they do not authenticate to the authorization server using a client secret. Instead, public clients rely on other means for authorization flows, like using the "Proof Key for Code Exchange" (PKCE) enhancement with the authorization code flow for SPAs and mobile apps.
   
-  - Use Cases:
+  * Use Cases:
   
     Mobile applications, desktop applications, and JavaScript web applications running in the browser are examples of public clients.
 
   The OAuth 2.0 and OpenID Connect specifications make this distinction to ensure that different types of clients use the most appropriate 
   and secure method for their environment:
 
-  - Security:
+  * Security:
   
     It prevents exposing secrets in environments where they cannot be protected effectively. This is crucial for maintaining the security integrity of the OAuth/OIDC ecosystem.
 
-  - Adaptability:
+  * Adaptability:
   
     It allows the OAuth/OIDC framework to adapt to a wide range of application types and deployment scenarios by providing appropriate mechanisms for each type of client.
 
   In practice, when you encounter the requirement that "The 'client_secret' or 'client_assertion' parameter must be specified when using the client credentials grant,
   it implies that the authorization server (OpenIddict) expects the client to authenticate itself as a confidential client.
 
-  - For a public client:
+  * For a public client:
   
     You wouldn�t normally use the client credentials flow because it requires a client secret for authentication. Public clients typically use flows designed for 
     environments where secrets cannot be securely stored, such as the authorization code flow with PKCE.
 
-  - For a confidential client:
+  * For a confidential client:
 
     You must include the client_secret in requests to the token endpoint when using the client credentials grant (or other flows where client authentication is necessary), 
     as the server expects a form of client authentication that relies on the ability to securely store this secret.
@@ -222,7 +219,7 @@ response to this request will include an access token that can be used to authen
 }
 ```
 
-You can decode the `access_token` using a JWT decoder to view the token's claims and verify its contents. For example the decoder [at](https://jwt.io/) can be used to decode the token:
+You can decode the `access_token` above using a JWT decoder to view the token's claims and verify its contents. For example the decoder [at](https://jwt.io/) can be used to decode the token:
 
 ```json
 //header
@@ -246,7 +243,234 @@ You can decode the `access_token` using a JWT decoder to view the token's claims
 }
 ```
 
-For completeness, you can also test your password flow by executing the following command:
+With this access token, you can now call the API endpoints that require authentication. The token should be included in the `Authorization` header of the request:
+
+```bash
+curl -v -k -X 'GET'   'https://rest_api_ip_address:rest_api_port/api/identity/users'   -H 'accept: text/plain'   -H 'Authorization: Bearer ey...'
+```
+
+despite the successfull token generation, **the token is not yet used to authenticate the request**. This is because the `Be.Cars.HttpApi.Host` project (or client) is not yet configured to use the token.  
+
+For integrating the client credentials grant type, particularly for the Swagger client in the `Be.Cars.HttpApi.Host` project, and specifying permissions for default Swagger calls such as Profile, Permissions, Role, Tenant, etc., you should be aware that ABP.io uses a permission - based authorization system. The exact permissions you need to grant depend on the actions you want to allow through the client credentials grant.
+
+The client credentials grant type is typically used by clients(applications) to access resources about themselves rather than to access a user's resources. Therefore, you'd grant permissions that are appropriate for an application rather than a user. Here’s a general approach on how to assign permissions for services like Profile, Permissions, Role, Tenant, etc.:
+
+* **Identify Permission Names**: Look into the ABP.io documentation, source code or ABP database to find the exact permission names. Permissions in ABP are usually defined in a [AbpPermissionGrants] table (for common functionalities like managing roles, tenants, or users, ABP modules define standard permissions).
+* **Common Permissions**: For the default ABP.io calls (Profile, Permissions, etc.), we need permissions similar to the following (note that the exact permission names might vary based on your application setup and ABP version) :
+    * **Profile**: Permissions related to user profile might not be accessible via client credentials since they typically require a user context. However, if you have services that allow profile updates without a user context, you’d look for permissions like:
+      * `AbpIdentity.Users`
+      * `AbpIdentity.Users.Create`
+      * `AbpIdentity.Users.Delete`      
+      * `AbpIdentity.Users.Update`
+      * `AbpIdentity.Users.Update.ManageRoles`
+    * **Permissions**: Managing permissions typically requires permissions like: 
+      * `AbpIdentity.Roles.ManagePermissions`
+      * `AbpIdentity.Users.ManagePermissions`
+    * **Role**: For role management, you might need:
+      * `AbpIdentity.Roles`
+      * `AbpIdentity.Roles.Create`
+      * `AbpIdentity.Roles.Delete`
+      * `AbpIdentity.Roles.Update`
+    * **Tenant**: For multi-tenancy support, permissions like 
+      * `AbpTenantManagement.Tenants`
+      * `AbpTenantManagement.Tenants.Create`
+      * `AbpTenantManagement.Tenants.Delete`
+      * `AbpTenantManagement.Tenants.ManageConnectionStrings`
+      * `AbpTenantManagement.Tenants.ManageFeatures`
+      * `AbpTenantManagement.Tenants.Update`
+    * ...
+    *
+    
+In your `OpenIddictDataSeedContributor` class in project `Be.Cars.Domain` , add or edit the following *Swagger Client* application configuration code:
+
+```csharp
+// Swagger Client
+var swaggerClientId = configurationSection["Cars_Swagger:ClientId"];
+if (!swaggerClientId.IsNullOrWhiteSpace())
+{
+    var swaggerRootUrl = configurationSection["Cars_Swagger:RootUrl"]?.TrimEnd('/');
+
+    await CreateApplicationAsync(
+        name: swaggerClientId!,
+        type: OpenIddictConstants.ClientTypes.Confidential,
+        consentType: OpenIddictConstants.ConsentTypes.Implicit,
+        displayName: "Swagger Application",
+        secret: configurationSection["Cars_Swagger:ClientSecret"] ?? "1q2w3e*",
+        grantTypes: new List<string> { OpenIddictConstants.GrantTypes.AuthorizationCode, OpenIddictConstants.GrantTypes.ClientCredentials, },
+        scopes: commonScopes,
+        redirectUri: $"{swaggerRootUrl}/swagger/oauth2-redirect.html",
+        clientUri: swaggerRootUrl,
+        permissions: new List<string>
+        {
+            // taken form table [Pointedwords].[dbo].[AbpPermissionGrants] which is initialized for admin with all appropriate permissions
+            //https://docs.abp.io/en/commercial/latest/startup-templates/microservice/synchronous-interservice-communication
+            "AbpIdentity.Roles",
+            "AbpIdentity.Roles.Create",
+            "AbpIdentity.Roles.Delete",
+            "AbpIdentity.Roles.ManagePermissions",
+            "AbpIdentity.Roles.Update",
+            "AbpIdentity.Users",
+            "AbpIdentity.Users.Create",
+            "AbpIdentity.Users.Delete",
+            "AbpIdentity.Users.ManagePermissions",
+            "AbpIdentity.Users.Update",
+            "AbpIdentity.Users.Update.ManageRoles",
+            "AbpTenantManagement.Tenants",
+            "AbpTenantManagement.Tenants.Create",
+            "AbpTenantManagement.Tenants.Delete",
+            "AbpTenantManagement.Tenants.ManageConnectionStrings",
+            "AbpTenantManagement.Tenants.ManageFeatures",
+            "AbpTenantManagement.Tenants.Update",
+            "FeatureManagement.ManageHostFeatures",
+            "SettingManagement.Emailing",
+            "SettingManagement.Emailing.Test",
+            "SettingManagement.TimeZone",
+        }
+    );            
+}
+```
+
+#### Configure the client 
+
+In your client configuration, you will specify these permissions as scopes, in class `CarsHttpApiHostModule` project `Be.Cars.HttpApi.Host` :
+
+```csharp
+/// <summary>
+/// Configure the Swagger service with OIDC authentication:
+/// <para>
+/// <list type="bullet">
+/// <item>AbpSwaggerOidcFlows.AuthorizationCode: The "authorization_code" flow is the default and suggested flow.Doesn't require a client secret when even there is a field for it.</item>
+/// <item>AbpSwaggerOidcFlows.Implicit: The deprecated "implicit" flow that was used for javascript applications.</item>
+/// <item>AbpSwaggerOidcFlows.Password: The legacy password flow which is also known as Resource Ownder Password flow. You need to provide a user name, password and client secret for it.</item>
+/// <item>AbpSwaggerOidcFlows.ClientCredentials: The "client_credentials" flow that is used for server to server interactions.</item>
+/// </list>
+/// <see cref="AbpSwaggerOidcFlows.AuthorizationCode"/> and <see cref="AbpSwaggerOidcFlows.ClientCredentials"/> are used in this case.
+/// </para>
+/// <para>
+/// Only one scope is enabled: Pointedwords
+/// </para>
+/// </summary>
+/// <param name="context"></param>
+/// <param name="configuration"></param>
+private static void ConfigureSwaggerServices(ServiceConfigurationContext context, IConfiguration configuration)
+{
+    context.Services.AddAbpSwaggerGenWithOidc(
+        configuration["AuthServer:Authority"],
+        scopes: new[] { "Pointedwords" },            
+        // "authorization_code"
+        flows: new[] { /*AbpSwaggerOidcFlows.AuthorizationCode,*/ AbpSwaggerOidcFlows.ClientCredentials },
+        // When deployed on K8s, should be metadata URL of the reachable DNS over internet like https://myauthserver.company.com
+        discoveryEndpoint: configuration["AuthServer:Authority"],
+        options =>
+        {
+            options.SwaggerDoc("v1", new OpenApiInfo { Title = "Pointedwords API", Version = "v1" });
+            options.DocInclusionPredicate((docName, description) => true);
+            options.CustomSchemaIds(type => type.FullName);
+        }
+    );
+}
+```
+
+besides specifying the scope and supported scope, you probably also want to check tokens for its validity. This can be done by adding the following code to the `ConfigureServices` method in the `Be.Cars.HttpApi.Host` project:
+
+```csharp
+/// <summary>
+/// Configures the authentication for the application.
+/// </summary>
+/// <param name="context">The service configuration context.</param>
+/// <param name="configuration">The application configuration.</param>
+private void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
+{
+    context.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                // Set the authority to the issuer's URL. This is used to discover the issuer's public key for validating token signatures.
+                options.Authority = configuration["AuthServer:Authority"];
+                // Require HTTPS for metadata address when this is enabled.
+                options.RequireHttpsMetadata = configuration.GetValue<bool>("AuthServer:RequireHttpsMetadata");
+                // Set the valid audience for tokens. Tokens with other audiences will be rejected.
+                options.Audience = "Pointedwords";
+
+                // Configure the token validation parameters.
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    // Validate the signing key. This is necessary to ensure that the token was issued by the trusted issuer.
+                    // The signing key must match! its settings are retrieved from the AuthServer link (options.Authority), check the metadata at options.Authority/.well-known/openid-configuration
+                    // and look for "jwks_uri": "https://localhost:5001/.well-known/jwks", open the jwks_uri link and look for the "keys" array
+                    ValidateIssuerSigningKey = true,
+                    ValidateIssuer = false,
+                    // Validate the audience. This ensures the token was issued for your application.
+                    //the audience is Pointedwords as defined above
+                    ValidateAudience = true,
+                    // Validate the lifetime of the token (its "nbf" or not before and "exp" or expiration claims).                     
+                    ValidateLifetime = true,
+                    // Allow a certain amount of clock skew in token expiration. This helps to mitigate clock synchronization issues between servers.
+                    //5 minute tolerance for the expiration date
+                    ClockSkew = TimeSpan.FromSeconds(5 * 60)
+                };
+            });
+    // Enable dynamic claims. This allows the application to add and remove claims from user identities as necessary for authorization.
+    context.Services.Configure<AbpClaimsPrincipalFactoryOptions>(options =>
+    {
+        options.IsDynamicClaimsEnabled = true;
+    });
+}
+```
+
+:fire: Due to a bug - at least, that's what it seems to be, [validation does not work](https://github.com/dotnet/aspnetcore/issues/52075) if no explicit key is given. As we don't want to explicitely configure a key, we disable the issuer validation. Hopefully, this will be fixed in the future, i.e. getting the key automatically from the authentication server.
+
+For now, use the following code:
+
+```csharp
+/// <summary>
+/// Configures the authentication for the application.
+/// </summary>
+/// <param name="context">The service configuration context.</param>
+/// <param name="configuration">The application configuration.</param>
+private void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
+{
+    context.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+            {
+                // Set the authority to the issuer's URL. This is used to discover the issuer's public key for validating token signatures.
+                options.Authority = configuration["AuthServer:Authority"];
+                // Require HTTPS for metadata address when this is enabled.
+                options.RequireHttpsMetadata = configuration.GetValue<bool>("AuthServer:RequireHttpsMetadata");
+                // Set the valid audience for tokens. Tokens with other audiences will be rejected.
+                options.Audience = "Pointedwords";
+
+                // Configure the token validation parameters.
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    //TODO https://github.com/dotnet/aspnetcore/issues/52075 - ValidateIssuerSigningKey should be true and SignatureValidator should not be set
+                    // Validate the signing key. This is necessary to ensure that the token was issued by the trusted issuer.
+                    // The signing key must match! its settings are retrieved from the AuthServer link (options.Authority), check the metadata at options.Authority/.well-known/openid-configuration
+                    // and look for "jwks_uri": "https://localhost:5001/.well-known/jwks", open the jwks_uri link and look for the "keys" array
+                    ValidateIssuerSigningKey = false,
+                    SignatureValidator = (token, _) => new JsonWebToken(token),
+                    ValidateIssuer = false,
+                    // Validate the audience. This ensures the token was issued for your application.
+                    //the audience is Pointedwords as defined above
+                    ValidateAudience = true,
+                    // Validate the lifetime of the token (its "nbf" or not before and "exp" or expiration claims).                     
+                    ValidateLifetime = true,
+                    // Allow a certain amount of clock skew in token expiration. This helps to mitigate clock synchronization issues between servers.
+                    //5 minute tolerance for the expiration date
+                    ClockSkew = TimeSpan.FromSeconds(5 * 60)
+                };
+
+            });
+    // Enable dynamic claims. This allows the application to add and remove claims from user identities as necessary for authorization.
+    context.Services.Configure<AbpClaimsPrincipalFactoryOptions>(options =>
+    {
+        options.IsDynamicClaimsEnabled = true;
+    });
+}
+```
+
+#### Authorization code flow
+
+For completeness, you can also test your authorization flow by executing the following command:
 
 ```bash
 curl -X POST https://your_ip:your_port/connect/token \

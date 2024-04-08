@@ -38,6 +38,8 @@ using Volo.Abp.Security.Claims;
 using Volo.Abp.Swashbuckle;
 using Volo.Abp.UI.Navigation.Urls;
 using Volo.Abp.VirtualFileSystem;
+using Microsoft.IdentityModel.Tokens;
+using Microsoft.IdentityModel.JsonWebTokens;
 
 namespace Be.Cars;
 
@@ -131,38 +133,107 @@ public class CarsHttpApiHostModule : AbpModule
         });
     }
 
+    /// <summary>
+    /// Configures the authentication for the application.
+    /// </summary>
+    /// <param name="context">The service configuration context.</param>
+    /// <param name="configuration">The application configuration.</param>
     private void ConfigureAuthentication(ServiceConfigurationContext context, IConfiguration configuration)
     {
         context.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
-            {
-                options.Authority = configuration["AuthServer:Authority"];
-                options.RequireHttpsMetadata = configuration.GetValue<bool>("AuthServer:RequireHttpsMetadata");
-                options.Audience = "Cars";
-            });
+             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+             {
+                 // Set the authority to the issuer's URL. This is used to discover the issuer's public key for validating token signatures.
+                 options.Authority = configuration["AuthServer:Authority"];
+                 // Require HTTPS for metadata address when this is enabled.
+                 options.RequireHttpsMetadata = configuration.GetValue<bool>("AuthServer:RequireHttpsMetadata");
+                 // Set the valid audience for tokens. Tokens with other audiences will be rejected.
+                 options.Audience = "Pointedwords";
 
+                 // Configure the token validation parameters.
+                 options.TokenValidationParameters = new TokenValidationParameters
+                 {
+                     //TODO https://github.com/dotnet/aspnetcore/issues/52075 - ValidateIssuerSigningKey should be true and SignatureValidator should not be set
+                     // Validate the signing key. This is necessary to ensure that the token was issued by the trusted issuer.
+                     // The signing key must match! its settings are retrieved from the AuthServer link (options.Authority), check the metadata at options.Authority/.well-known/openid-configuration
+                     // and look for "jwks_uri": "https://localhost:5001/.well-known/jwks", open the jwks_uri link and look for the "keys" array
+                     ValidateIssuerSigningKey = false,
+                     SignatureValidator = (token, _) => new JsonWebToken(token),
+                     ValidateIssuer = false,
+                     // Validate the audience. This ensures the token was issued for your application.
+                     //the audience is Pointedwords as defined above
+                     ValidateAudience = true,
+                     // Validate the lifetime of the token (its "nbf" or not before and "exp" or expiration claims).                     
+                     ValidateLifetime = true,
+                     // Allow a certain amount of clock skew in token expiration. This helps to mitigate clock synchronization issues between servers.
+                     //5 minute tolerance for the expiration date
+                     ClockSkew = TimeSpan.FromSeconds(5 * 60)
+                 };
+
+             });
+        // Enable dynamic claims. This allows the application to add and remove claims from user identities as necessary for authorization.
         context.Services.Configure<AbpClaimsPrincipalFactoryOptions>(options =>
         {
             options.IsDynamicClaimsEnabled = true;
         });
     }
 
+    /// <summary>
+    /// Configure the Swagger service with OIDC authentication:
+    /// <para>
+    /// <list type="bullet">
+    /// <item>AbpSwaggerOidcFlows.AuthorizationCode: The "authorization_code" flow is the default and suggested flow.Doesn't require a client secret when even there is a field for it.</item>
+    /// <item>AbpSwaggerOidcFlows.Implicit: The deprecated "implicit" flow that was used for javascript applications.</item>
+    /// <item>AbpSwaggerOidcFlows.Password: The legacy password flow which is also known as Resource Ownder Password flow. You need to provide a user name, password and client secret for it.</item>
+    /// <item>AbpSwaggerOidcFlows.ClientCredentials: The "client_credentials" flow that is used for server to server interactions.</item>
+    /// </list>
+    /// <see cref="AbpSwaggerOidcFlows.AuthorizationCode"/> and <see cref="AbpSwaggerOidcFlows.ClientCredentials"/> are used in this case.
+    /// </para>
+    /// <para>
+    /// Only one scope is enabled: Cars
+    /// </para>
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="configuration"></param>
+    /// <remarks>
+    /// The Swagger UI only supports one flow, therefore, the "authorization_code" flow is commented out to ease testing.
+    /// </remarks>
     private static void ConfigureSwagger(ServiceConfigurationContext context, IConfiguration configuration)
     {
-        context.Services.AddAbpSwaggerGenWithOAuth(
-            configuration["AuthServer:Authority"]!,
-            new Dictionary<string, string>
-            {
-                    {"Cars", "Cars API"}
-            },
+        context.Services.AddAbpSwaggerGenWithOidc(
+            configuration["AuthServer:Authority"],
+            scopes: new[] { "Cars" },
+            //TODO enable the "authorization_code" flow when the Swagger UI supports multiple flows, for deployment or make configurable
+            flows: new[] { /*AbpSwaggerOidcFlows.AuthorizationCode,*/ AbpSwaggerOidcFlows.ClientCredentials },
+            // When deployed on K8s, should be metadata URL of the reachable DNS over internet like https://myauthserver.company.com
+            discoveryEndpoint: configuration["AuthServer:Authority"],
             options =>
             {
                 options.SwaggerDoc("v1", new OpenApiInfo { Title = "Cars API", Version = "v1" });
                 options.DocInclusionPredicate((docName, description) => true);
                 options.CustomSchemaIds(type => type.FullName);
-            });
+            }
+        );
     }
 
+    /// <summary>
+    /// <para>
+    /// Antiforgery tokens are used to prevent Cross-Site Request Forgery (CSRF) attacks and are particularly relevant in applications 
+    /// where form data is submitted. These tokens rely on the application's data protection APIs to encrypt and decrypt the tokens. 
+    /// When running in a distributed environment, such as behind a load balancer with multiple application instances, all instances must 
+    /// share the same data protection keys to successfully encrypt and decrypt tokens.
+    /// </para>
+    /// <para>
+    /// As we are using Redis as a distributed cache, we can use it to store the data protection keys, also in Development as NGINX is used as 
+    /// a load balancer in Development (at least in the Proxmox setup).
+    /// </para>
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="configuration"></param>
+    /// <param name="hostingEnvironment"></param>
+    /// <remarks>
+    /// If you see an "The antiforgery token could not be decrypted." error, check Redis and usage of NGINX for load balancing.
+    /// </remarks>
     private void ConfigureDataProtection(
         ServiceConfigurationContext context,
         IConfiguration configuration,
