@@ -263,3 +263,4 @@ src/Be.Cars.Blazor/Logs/*
 
 # Use abp install-libs to restore.
 **/wwwroot/libs/*
+test/Be.Cars.TestBase/appsettings.secrets.json
