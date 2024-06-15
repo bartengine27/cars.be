@@ -841,3 +841,7 @@ You can see the following resources to learn more about your solution and the AB
 - [Application Startup Template](https://docs.abp.io/en/commercial/latest/startup-templates/application/index)
 - [LeptonX Theme Module](https://docs.abp.io/en/commercial/latest/themes/lepton-x/index)
 - [LeptonX Blazor UI](https://docs.abp.io/en/commercial/latest/themes/lepton-x/blazor?UI=BlazorServer)
+
+### TODO
+
+- Use/evaluate [ReportGenerator](https://github.com/danielpalme/ReportGenerator)
